@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Pinger</title>
+  <title>Discord Web Chatpack | made by agony</title>
   <style>
     * {
       margin: 0;
@@ -202,7 +202,7 @@
 </head>
 <body>
   <div class="container">
-    <h1>Discord Web Pinger</h1>
+    <h1>Discord Web Chatpack | made by agony</h1>
     <input id="token" placeholder="Your Discord Token" autocomplete="off" spellcheck="false" />
     <input id="channelId" placeholder="Channel ID" autocomplete="off" spellcheck="false" />
     <input id="userId" placeholder="User ID to ping" autocomplete="off" spellcheck="false" />
@@ -282,7 +282,7 @@
         msg = msg.replace(/^#+/, '');
       }
 
-      const content = `<@${userId}> ${msg}`;
+      const content = ` ${msg} <@${userId}>`;
 
       try {
         const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -378,3 +378,4 @@
   </script>
 </body>
 </html>
+
