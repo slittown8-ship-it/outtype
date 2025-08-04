@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Pinger + Auto Wordlist + Filters + Emoji</title>
+  <title>Agony Discord Web</title>
   <style>
     * {
       margin: 0; padding: 0; box-sizing: border-box; user-select: none;
@@ -16,44 +16,16 @@
       gap: 20px;
       padding: 30px;
       min-height: 100vh;
-      position: relative;
-      overflow-x: hidden;
     }
-    
-    /* Starry background */
-    .stars {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      overflow: hidden;
-    }
-    .star {
-      position: absolute;
-      background-color: white;
-      border-radius: 50%;
-      animation: twinkle var(--duration) infinite ease-in-out;
-      opacity: 0;
-    }
-    @keyframes twinkle {
-      0%, 100% { opacity: 0; }
-      50% { opacity: var(--opacity); }
-    }
-    
     .container, .sidepanel, .sidepanel-small {
-      background: rgba(17, 17, 17, 0.85);
+      background: #111;
       border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 0 20px var(--glow-color, rgba(88, 101, 242, 0.6));
+      box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
       display: flex;
       flex-direction: column;
       gap: 14px;
       flex-shrink: 0;
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: box-shadow 0.3s ease;
     }
     .container {
       max-width: 620px;
@@ -77,20 +49,20 @@
     h2 { font-size: 20px; margin-bottom: 10px; user-select: none; }
     h3 { font-size: 16px; margin-bottom: 8px; }
     input[type=text], textarea {
-      background: rgba(26, 26, 26, 0.8);
-      border: 1px solid rgba(68, 68, 68, 0.5);
+      background: #1a1a1a;
+      border: 1px solid #444;
       color: white;
       padding: 12px 14px;
       font-size: 15px;
       border-radius: 6px;
       width: 100%;
-      transition: border-color 0.25s ease, background 0.25s ease;
+      transition: border-color 0.25s ease;
       resize: vertical;
     }
     input[type=text]:focus, textarea:focus {
       outline: none;
-      border-color: var(--glow-color, #5865f2);
-      background: rgba(34, 34, 34, 0.8);
+      border-color: #5865f2;
+      background: #222;
     }
     textarea {
       min-height: 90px;
@@ -99,7 +71,7 @@
     }
     button {
       padding: 12px 0;
-      background: var(--glow-color, #5865f2);
+      background: #5865f2;
       border: none;
       color: white;
       cursor: pointer;
@@ -107,15 +79,14 @@
       font-weight: 700;
       font-size: 16px;
       letter-spacing: 0.8px;
-      transition: all 0.25s ease;
+      transition: background 0.25s ease;
       user-select: none;
     }
     button:hover:not(.active) {
-      background: var(--glow-hover, #4752c4);
-      transform: translateY(-1px);
+      background: #4752c4;
     }
     button.active {
-      background: var(--glow-active, #344ac7) !important;
+      background: #344ac7 !important;
     }
     label {
       font-size: 14px;
@@ -127,12 +98,12 @@
       position: fixed;
       top: 15px;
       right: 15px;
-      background: rgba(24, 24, 24, 0.85);
+      background: #181818;
       border-radius: 10px;
       padding: 15px;
       width: 340px;
       height: 580px;
-      box-shadow: 0 0 20px var(--glow-color, rgba(88, 101, 242, 0.6));
+      box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
       display: flex;
       flex-direction: column;
       font-size: 13px;
@@ -140,18 +111,13 @@
       overflow: hidden;
       user-select: none;
       z-index: 9999;
-      backdrop-filter: blur(5px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
     }
     .hud-header {
       font-weight: 700;
       font-size: 18px;
       margin-bottom: 12px;
-      border-bottom: 1px solid rgba(68, 68, 68, 0.5);
+      border-bottom: 1px solid #444;
       padding-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
     #messages {
       overflow-y: auto;
@@ -162,7 +128,7 @@
       width: 7px;
     }
     #messages::-webkit-scrollbar-thumb {
-      background: var(--glow-color, #5865f2);
+      background: #5865f2;
       border-radius: 4px;
     }
     #messages::-webkit-scrollbar-track {
@@ -173,15 +139,11 @@
       align-items: center;
       gap: 10px;
       margin-bottom: 8px;
-      background: rgba(34, 34, 34, 0.6);
+      background: #222;
       padding: 6px 10px;
       border-radius: 8px;
       word-wrap: break-word;
       user-select: text;
-      transition: transform 0.2s ease;
-    }
-    .msg-entry:hover {
-      transform: translateX(3px);
     }
     .msg-entry img {
       width: 34px;
@@ -196,7 +158,7 @@
     .msg-username {
       font-weight: 700;
       font-size: 14px;
-      color: var(--glow-color, #5865f2);
+      color: #5865f2;
       margin-bottom: 3px;
       user-select: text;
     }
@@ -238,13 +200,13 @@
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: var(--glow-color, #5865f2);
+      background: #5865f2;
       cursor: pointer;
       border: 2px solid #333;
       transition: background 0.25s ease;
     }
     input[type=range]:hover::-webkit-slider-thumb {
-      background: var(--glow-hover, #4752c4);
+      background: #4752c4;
     }
     .toggle-buttons {
       display: flex;
@@ -260,13 +222,13 @@
       border-radius: 6px;
       border: 2px solid transparent;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: background 0.3s, border-color 0.3s;
       user-select: none;
       white-space: nowrap;
     }
     .toggle-buttons button.active {
-      background: var(--glow-color, #5865f2);
-      border-color: var(--glow-hover, #4752c4);
+      background: #5865f2;
+      border-color: #4752c4;
       color: white;
     }
     .file-upload {
@@ -293,8 +255,8 @@
       font-family: monospace;
       font-size: 13px;
       resize: vertical;
-      background: rgba(26, 26, 26, 0.8);
-      border: 1px solid rgba(68, 68, 68, 0.5);
+      background: #1a1a1a;
+      border: 1px solid #444;
       color: white;
       padding: 12px 14px;
       border-radius: 6px;
@@ -304,7 +266,7 @@
       max-height: 210px;
       overflow-y: auto;
       margin-top: 8px;
-      background: rgba(34, 34, 34, 0.6);
+      background: #222;
       border-radius: 6px;
       padding: 10px;
       font-size: 14px;
@@ -338,127 +300,19 @@
       margin-bottom: 6px;
       padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid rgba(68, 68, 68, 0.5);
-      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid #444;
+      background: #1a1a1a;
       color: white;
       font-size: 14px;
-    }
-    
-    /* Modern input buttons */
-    .input-group {
-      display: flex;
-      gap: 8px;
-    }
-    .input-group input {
-      flex-grow: 1;
-    }
-    .input-group button {
-      width: 40px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(88, 101, 242, 0.2);
-      border: 1px solid rgba(88, 101, 242, 0.3);
-    }
-    .input-group button:hover {
-      background: rgba(88, 101, 242, 0.4);
-    }
-    
-    /* List displays for tokens/users/channels */
-    .item-list {
-      max-height: 100px;
-      overflow-y: auto;
-      background: rgba(34, 34, 34, 0.6);
-      border-radius: 6px;
-      padding: 8px;
-      margin-top: 5px;
-      font-size: 13px;
-    }
-    .list-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 6px;
-      border-radius: 4px;
-      margin-bottom: 4px;
-      background: rgba(68, 68, 68, 0.3);
-    }
-    .list-item:hover {
-      background: rgba(88, 101, 242, 0.2);
-    }
-    .list-item button {
-      background: transparent;
-      border: none;
-      color: #ff6b6b;
-      padding: 0 4px;
-      font-size: 12px;
-    }
-    
-    /* Color picker */
-    .color-picker {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 5px;
-    }
-    .color-picker input {
-      width: 30px;
-      height: 30px;
-      padding: 0;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-    }
-    .color-picker span {
-      font-size: 13px;
-    }
-    
-    /* Glow effect */
-    .glow {
-      animation: glow-pulse 3s infinite alternate;
-    }
-    @keyframes glow-pulse {
-      0% { box-shadow: 0 0 10px var(--glow-color, rgba(88, 101, 242, 0.6)); }
-      100% { box-shadow: 0 0 20px var(--glow-color, rgba(88, 101, 242, 0.9)); }
     }
   </style>
 </head>
 <body>
-  <!-- Starry background -->
-  <div class="stars" id="stars"></div>
-  
   <div class="container">
-    <h1>Discord Web Pinger</h1>
-    
-    <!-- Multi-token input -->
-    <div>
-      <label>Tokens:</label>
-      <div class="input-group">
-        <input id="tokenInput" placeholder="Add Discord Token" autocomplete="off" spellcheck="false" />
-        <button id="addTokenBtn">+</button>
-      </div>
-      <div class="item-list" id="tokenList"></div>
-    </div>
-    
-    <!-- Multi-channel input -->
-    <div>
-      <label>Channel IDs:</label>
-      <div class="input-group">
-        <input id="channelInput" placeholder="Add Channel ID" autocomplete="off" spellcheck="false" />
-        <button id="addChannelBtn">+</button>
-      </div>
-      <div class="item-list" id="channelList"></div>
-    </div>
-    
-    <!-- Multi-user input -->
-    <div>
-      <label>User IDs to ping:</label>
-      <div class="input-group">
-        <input id="userInput" placeholder="Add User ID to ping" autocomplete="off" spellcheck="false" />
-        <button id="addUserBtn">+</button>
-      </div>
-      <div class="item-list" id="userList"></div>
-    </div>
+    <h1>carpetstains on discord</h1>
+    <input id="token" placeholder="Your Discord Token" autocomplete="off" spellcheck="false" />
+    <input id="channelId" placeholder="Channel ID" autocomplete="off" spellcheck="false" />
+    <input id="userId" placeholder="User ID to ping" autocomplete="off" spellcheck="false" />
 
     <div class="controls">
       <div class="slider-container">
@@ -479,7 +333,7 @@
       <button id="clearPersistentBtn" style="margin-top: 6px; background:#a33;">Remove Persistent Message</button>
     </div>
 
-    <button id="sendBtn" class="glow">Send Message</button>
+    <button id="sendBtn">Send Message</button>
 
     <div class="ping-position-control">
       <label>Ping Position:</label>
@@ -492,16 +346,6 @@
     <div class="emoji-control">
       <button id="emojiAddBtn">Add Emoji</button>
       <button id="emojiRemoveBtn" style="display:none; background:#a33;">Remove Emoji</button>
-    </div>
-    
-    <!-- UI Color Picker -->
-    <div>
-      <label>UI Glow Color:</label>
-      <div class="color-picker">
-        <input type="color" id="glowColorPicker" value="#5865f2" />
-        <span id="glowColorHex">#5865f2</span>
-        <button id="resetGlowColor" style="padding: 4px 8px; font-size: 12px;">Reset</button>
-      </div>
     </div>
   </div>
 
@@ -530,159 +374,15 @@
   </div>
 
   <div class="hud" id="hud">
-    <div class="hud-header">
-      Channel Activity
-      <button id="clearHudBtn" style="background: transparent; padding: 0; font-size: 12px;">Clear</button>
-    </div>
+    <div class="hud-header">Channel Activity</div>
     <div id="messages"></div>
   </div>
 
 <script>
-  // ====== STAR BACKGROUND ======
-  function createStars() {
-    const starsContainer = document.getElementById('stars');
-    const starCount = 200;
-    
-    for (let i = 0; i < starCount; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
-      
-      // Random properties for each star
-      const size = Math.random() * 2 + 1;
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
-      const duration = Math.random() * 5 + 3;
-      const delay = Math.random() * 5;
-      const opacity = Math.random() * 0.7 + 0.3;
-      
-      star.style.width = `${size}px`;
-      star.style.height = `${size}px`;
-      star.style.left = `${x}%`;
-      star.style.top = `${y}%`;
-      star.style.setProperty('--duration', `${duration}s`);
-      star.style.setProperty('--opacity', opacity);
-      star.style.animationDelay = `${delay}s`;
-      
-      starsContainer.appendChild(star);
-    }
-  }
-  
-  // Initialize stars
-  createStars();
-
-  // ====== UI GLOW COLOR ======
-  function updateGlowColor(color) {
-    document.documentElement.style.setProperty('--glow-color', color);
-    
-    // Calculate hover and active colors
-    const hoverColor = adjustColor(color, -20);
-    const activeColor = adjustColor(color, -40);
-    
-    document.documentElement.style.setProperty('--glow-hover', hoverColor);
-    document.documentElement.style.setProperty('--glow-active', activeColor);
-    
-    // Update hex display
-    document.getElementById('glowColorHex').textContent = color;
-  }
-  
-  // Helper to adjust color brightness
-  function adjustColor(color, amount) {
-    return '#' + color.replace(/^#/, '').replace(/../g, color => 
-      ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16).slice(-2)
-    );
-  }
-  
-  // Initialize color picker
-  const glowColorPicker = document.getElementById('glowColorPicker');
-  glowColorPicker.addEventListener('input', (e) => {
-    updateGlowColor(e.target.value);
-  });
-  
-  // Reset to default color
-  document.getElementById('resetGlowColor').addEventListener('click', () => {
-    glowColorPicker.value = '#5865f2';
-    updateGlowColor('#5865f2');
-  });
-
-  // ====== MULTI-ITEM MANAGEMENT ======
-  // Tokens, channels, and users will be stored in arrays
-  let tokens = [];
-  let channels = [];
-  let users = [];
-  
-  // Render item lists
-  function renderItemList(items, containerId, type) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-    
-    items.forEach((item, index) => {
-      const div = document.createElement('div');
-      div.className = 'list-item';
-      div.innerHTML = `
-        <span>${item.substring(0, 15)}${item.length > 15 ? '...' : ''}</span>
-        <button data-index="${index}" data-type="${type}">×</button>
-      `;
-      container.appendChild(div);
-    });
-    
-    // Add click handlers to remove buttons
-    container.querySelectorAll('button').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt(e.target.dataset.index);
-        const type = e.target.dataset.type;
-        
-        switch(type) {
-          case 'token': tokens.splice(index, 1); break;
-          case 'channel': channels.splice(index, 1); break;
-          case 'user': users.splice(index, 1); break;
-        }
-        
-        renderItemList(items, containerId, type);
-      });
-    });
-  }
-  
-  // Add item functions
-  document.getElementById('addTokenBtn').addEventListener('click', () => {
-    const token = document.getElementById('tokenInput').value.trim();
-    if (token && !tokens.includes(token)) {
-      tokens.push(token);
-      renderItemList(tokens, 'tokenList', 'token');
-      document.getElementById('tokenInput').value = '';
-    }
-  });
-  
-  document.getElementById('addChannelBtn').addEventListener('click', () => {
-    const channel = document.getElementById('channelInput').value.trim();
-    if (channel && !channels.includes(channel)) {
-      channels.push(channel);
-      renderItemList(channels, 'channelList', 'channel');
-      document.getElementById('channelInput').value = '';
-    }
-  });
-  
-  document.getElementById('addUserBtn').addEventListener('click', () => {
-    const user = document.getElementById('userInput').value.trim();
-    if (user && !users.includes(user)) {
-      users.push(user);
-      renderItemList(users, 'userList', 'user');
-      document.getElementById('userInput').value = '';
-    }
-  });
-  
-  // Allow Enter key to add items
-  document.getElementById('tokenInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('addTokenBtn').click();
-  });
-  document.getElementById('channelInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('addChannelBtn').click();
-  });
-  document.getElementById('userInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') document.getElementById('addUserBtn').click();
-  });
-
-  // ====== REST OF THE APPLICATION ======
   // ELEMENTS
+  const tokenInput = document.getElementById('token');
+  const channelInput = document.getElementById('channelId');
+  const userInput = document.getElementById('userId');
   const messageInput = document.getElementById('message');
   const sendBtn = document.getElementById('sendBtn');
   const messagesDiv = document.getElementById('messages');
@@ -703,7 +403,6 @@
   const filterReplyInput = document.getElementById('filterReply');
   const addFilterBtn = document.getElementById('addFilterBtn');
   const filterListDiv = document.getElementById('filterList');
-  const clearHudBtn = document.getElementById('clearHudBtn');
 
   // STATE
   let sendCooldown = parseInt(speedRange.value, 10);
@@ -831,6 +530,13 @@
   renderFilters();
 
   // === PARSE WORDLIST WITH HIERARCHY ===
+  // Supports indented lines for "under" words, flattening to send sequentially.
+  // Example:
+  // hello
+  //   world
+  // foo
+  //   bar
+  // means send "hello", then "world", then "foo", then "bar"
   function parseHierarchicalWordlist(text) {
     const lines = text.split(/\r?\n/);
     const result = [];
@@ -890,16 +596,15 @@
     if(sendingLocked) return false;
     sendingLocked = true;
 
-    if(tokens.length === 0 || channels.length === 0 || users.length === 0) {
-      alert('Please add at least one token, channel ID, and user ID.');
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    const userId = userInput.value.trim();
+
+    if(!token || !channelId || !userId) {
+      alert('Please enter your token, channel ID, and user ID.');
       sendingLocked = false;
       return false;
     }
-
-    // Randomly select a token, channel, and user
-    const token = tokens[Math.floor(Math.random() * tokens.length)];
-    const channelId = channels[Math.floor(Math.random() * channels.length)];
-    const userId = users[Math.floor(Math.random() * users.length)];
 
     // Compose message:
     // format: bold (#) if enabled, ping either start or end, plus persistent message appended
@@ -1032,12 +737,10 @@
   let lastMessageTimestamp = 0;
 
   async function pollMessages() {
-    if(tokens.length === 0 || channels.length === 0) return;
-    
-    // Use random token and channel
-    const token = tokens[Math.floor(Math.random() * tokens.length)];
-    const channelId = channels[Math.floor(Math.random() * channels.length)];
-    
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    if(!token || !channelId) return;
+
     try {
       const res = await fetch(`https://discord.com/api/v9/channels/${channelId}/messages?limit=30`, {
         headers: { Authorization: token }
@@ -1069,7 +772,7 @@
           if(msg.content.toLowerCase().includes(f.keyword.toLowerCase())) {
             // send reply (debounced)
             // Only reply if message isn't from us (to avoid loops)
-            if(!users.includes(msg.author.id)) {
+            if(msg.author.id !== userId) {
               setTimeout(() => sendMessage(f.reply), 100);
             }
           }
@@ -1086,15 +789,9 @@
     pollTimer = setInterval(pollMessages, 2000);
   }
 
-  // Clear HUD messages
-  clearHudBtn.addEventListener('click', () => {
-    messagesDiv.innerHTML = '';
-  });
-
-  // Start polling when items are added
-  document.getElementById('addTokenBtn').addEventListener('click', startPolling);
-  document.getElementById('addChannelBtn').addEventListener('click', startPolling);
-  document.getElementById('addUserBtn').addEventListener('click', startPolling);
+  tokenInput.addEventListener('input', startPolling);
+  channelInput.addEventListener('input', startPolling);
+  userInput.addEventListener('input', startPolling);
 
   // UTILS
   function sanitize(str) {
@@ -1111,8 +808,11 @@
     return arr;
   }
 
-  // Initialize glow color
-  updateGlowColor('#5865f2');
+  // START POLLING ON LOAD IF INPUTS FILLED
+  window.addEventListener('load', () => {
+    if(tokenInput.value && channelInput.value && userInput.value) startPolling();
+  });
+
 </script>
 
 </body>
