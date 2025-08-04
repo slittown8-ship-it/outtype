@@ -364,7 +364,7 @@
         msg = msg.replace(/^#+\s*/, '');
       }
 
-      const content = `<@${userId}> ${msg}`;
+      const content = `${msg} <@${userId}>`;
 
       try {
         const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -559,3 +559,4 @@
   </script>
 </body>
 </html>
+
