@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Pinger + Multi-token + Multi-user + Color Wheel + Status HUD</title>
+  <title>Discord Web Pinger + UI Fix</title>
   <style>
     * {
       margin: 0; padding: 0; box-sizing: border-box; user-select: none;
@@ -18,6 +18,17 @@
       min-height: 100vh;
       overflow: hidden;
       position: relative;
+      z-index: 0;
+    }
+    canvas#backgroundCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      user-select: none;
+      background: #0e0e0e;
     }
     .container, .sidepanel, .sidepanel-small {
       background: #111;
@@ -30,6 +41,8 @@
       flex-shrink: 0;
       max-height: 580px;
       overflow-y: auto;
+      z-index: 1;
+      position: relative;
     }
     .container {
       max-width: 620px;
@@ -111,7 +124,7 @@
       color: #ddd;
       overflow: hidden;
       user-select: none;
-      z-index: 9999;
+      z-index: 10;
     }
     .hud-header {
       font-weight: 700;
@@ -307,56 +320,19 @@
       color: white;
       font-size: 14px;
     }
-
-    /* Custom input colors for token, channel, user IDs */
-    #token, #channelId, #userId {
-      border: 1px solid #5865f2;
-      background-color: #1f1f3d;
-      color: #ddd;
-    }
-
-    /* Color glow effect */
-    .glow {
-      box-shadow: 0 0 12px 3px #5865f2;
-      transition: box-shadow 0.3s ease;
-    }
-
-    /* Color wheel container */
-    #colorWheelContainer {
-      margin-top: 10px;
-      user-select: none;
-    }
-
-    /* Prevent text selection */
-    body, input, textarea, button, label {
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-
-    /* Background animation for stars */
-    #backgroundCanvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      pointer-events: none;
-      user-select: none;
-      background: #0e0e0e;
-    }
   </style>
 </head>
 <body>
   <canvas id="backgroundCanvas"></canvas>
 
-  <div class="container glow">
+  <div class="container glow" style="z-index:1;">
     <h1>discord web pinger</h1>
     <label for="token">discord tokens (one per line)</label>
     <textarea id="token" placeholder="Paste your discord tokens here, one per line" spellcheck="false" rows="4"></textarea>
+
     <label for="channelId">channel ids (one per line)</label>
     <textarea id="channelId" placeholder="Paste target channel IDs here, one per line" spellcheck="false" rows="2"></textarea>
+
     <label for="userId">user ids to ping (one per line)</label>
     <textarea id="userId" placeholder="Paste user IDs to ping here, one per line" spellcheck="false" rows="2"></textarea>
 
@@ -402,7 +378,7 @@
     </div>
   </div>
 
-  <div class="sidepanel glow">
+  <div class="sidepanel glow" style="z-index:1;">
     <h2>wordlist / auto sender</h2>
     <label for="wordlistArea">paste or type wordlist (lines will send sequentially):</label>
     <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="example:\nhello\nworld\nfoo\nbar"></textarea>
@@ -415,7 +391,7 @@
     </div>
   </div>
 
-  <div class="sidepanel-small glow" style="padding-top: 4px;">
+  <div class="sidepanel-small glow" style="padding-top: 4px; z-index:1;">
     <h2>filters</h2>
     <label for="filterKeyword">keyword to detect:</label>
     <input id="filterKeyword" type="text" placeholder="e.g. loser" autocomplete="off" spellcheck="false" class="filter-key" />
@@ -426,7 +402,7 @@
     <div class="filter-list" id="filterList"></div>
   </div>
 
-  <div class="hud" id="hud">
+  <div class="hud" id="hud" style="z-index: 15;">
     <div class="hud-header">status hud</div>
     <div id="statusContent">
       <div><b>rate limited:</b> <span id="rateLimited">no</span></div>
@@ -446,501 +422,496 @@
       <div><b>IP info:</b> <span id="ipInfo">loading...</span></div>
     </div>
   </div>
+
   <script>
-  // elements
-  const tokenInput = document.getElementById('token');
-  const channelInput = document.getElementById('channelId');
-  const userInput = document.getElementById('userId');
-  const messageInput = document.getElementById('message');
-  const sendBtn = document.getElementById('sendBtn');
-  const messagesDiv = document.getElementById('messages');
-  const speedRange = document.getElementById('speedRange');
-  const speedValue = document.getElementById('speedValue');
-  const btnBold = document.getElementById('btnBold');
-  const btnUnbold = document.getElementById('btnUnbold');
-  const wordlistArea = document.getElementById('wordlistArea');
-  const fileInput = document.getElementById('fileInput');
-  const autoToggleBtn = document.getElementById('autoToggleBtn');
-  const pingStartBtn = document.getElementById('pingStart');
-  const pingEndBtn = document.getElementById('pingEnd');
-  const emojiAddBtn = document.getElementById('emojiAddBtn');
-  const emojiRemoveBtn = document.getElementById('emojiRemoveBtn');
-  const colorWheel = document.getElementById('colorWheel');
-  const glowColorWheel = document.getElementById('glowColorWheel');
-  const persistentMsgInput = document.getElementById('persistentMsgInput');
-  const clearPersistentBtn = document.getElementById('clearPersistentBtn');
-  const rateLimitedSpan = document.getElementById('rateLimited');
-  const activeTokensUl = document.getElementById('activeTokens');
-  const activeChannelsUl = document.getElementById('activeChannels');
-  const activeUserIdsUl = document.getElementById('activeUserIds');
-  const pingMsSpan = document.getElementById('pingMs');
-  const currentServerSpan = document.getElementById('currentServer');
-  const currentChannelSpan = document.getElementById('currentChannel');
-  const currentTimeSpan = document.getElementById('currentTime');
-  const ipInfoSpan = document.getElementById('ipInfo');
-  const filterKeyword = document.getElementById('filterKeyword');
-  const filterReply = document.getElementById('filterReply');
-  const addFilterBtn = document.getElementById('addFilterBtn');
-  const filterList = document.getElementById('filterList');
+    // starfield background
+    const canvas = document.getElementById('backgroundCanvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    let starCount = 120;
 
-  // state
-  let isAutoSending = false;
-  let autoSendInterval = null;
-  let wordlistIndex = 0;
-  let boldMode = true;
-  let pingPosition = 'start'; // or 'end'
-  let emojiActive = false;
-  let persistentMessage = '';
-  let tokens = [];
-  let channels = [];
-  let userIds = [];
-  let filters = [];
-  let rateLimited = false;
-
-  // helper: sleep(ms)
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  // starfield background
-  const canvas = document.getElementById('backgroundCanvas');
-  const ctx = canvas.getContext('2d');
-  let stars = [];
-  let starCount = 120;
-
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  class Star {
-    constructor() {
-      this.reset();
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     }
-    reset() {
-      this.x = Math.random() * canvas.width;
-      this.y = Math.random() * canvas.height;
-      this.size = Math.random() * 1.2 + 0.3;
-      this.speed = (this.size * 0.2) + 0.1;
-      this.alpha = Math.random() * 0.8 + 0.2;
-      this.twinkleSpeed = Math.random() * 0.05 + 0.01;
-      this.twinkleDirection = 1;
-    }
-    update() {
-      this.x -= this.speed;
-      if (this.x < 0) this.x = canvas.width;
-      this.alpha += this.twinkleSpeed * this.twinkleDirection;
-      if (this.alpha > 1) {
-        this.alpha = 1;
-        this.twinkleDirection = -1;
-      } else if (this.alpha < 0.2) {
-        this.alpha = 0.2;
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class Star {
+      constructor() {
+        this.reset();
+      }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 1.2 + 0.3;
+        this.speed = (this.size * 0.2) + 0.1;
+        this.alpha = Math.random() * 0.8 + 0.2;
+        this.twinkleSpeed = Math.random() * 0.05 + 0.01;
         this.twinkleDirection = 1;
       }
+      update() {
+        this.x -= this.speed;
+        if (this.x < 0) this.x = canvas.width;
+        this.alpha += this.twinkleSpeed * this.twinkleDirection;
+        if (this.alpha > 1) {
+          this.alpha = 1;
+          this.twinkleDirection = -1;
+        } else if (this.alpha < 0.2) {
+          this.alpha = 0.2;
+          this.twinkleDirection = 1;
+        }
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
+        ctx.shadowColor = "white";
+        ctx.shadowBlur = 5;
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-    draw() {
-      ctx.beginPath();
-      ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
-      ctx.shadowColor = "white";
-      ctx.shadowBlur = 5;
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fill();
+    for (let i = 0; i < starCount; i++) {
+      stars.push(new Star());
     }
-  }
-
-  for (let i = 0; i < starCount; i++) {
-    stars.push(new Star());
-  }
-
-  function animateStars() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(star => {
-      star.update();
-      star.draw();
-    });
-    requestAnimationFrame(animateStars);
-  }
-  animateStars();
-
-  // color wheel controls
-  function updateColors() {
-    const bgColor = colorWheel.value;
-    const glowColor = glowColorWheel.value;
-    document.body.style.backgroundColor = bgColor;
-    document.querySelectorAll('.glow').forEach(el => {
-      el.style.boxShadow = `0 0 20px 6px ${glowColor}`;
-      el.style.borderColor = glowColor;
-    });
-  }
-  colorWheel.addEventListener('input', updateColors);
-  glowColorWheel.addEventListener('input', updateColors);
-  updateColors();
-
-  // handle bold toggle
-  btnBold.addEventListener('click', () => {
-    boldMode = true;
-    btnBold.classList.add('active');
-    btnUnbold.classList.remove('active');
-  });
-  btnUnbold.addEventListener('click', () => {
-    boldMode = false;
-    btnBold.classList.remove('active');
-    btnUnbold.classList.add('active');
-  });
-
-  // handle ping position toggle
-  pingStartBtn.addEventListener('click', () => {
-    pingPosition = 'start';
-    pingStartBtn.classList.add('active');
-    pingEndBtn.classList.remove('active');
-  });
-  pingEndBtn.addEventListener('click', () => {
-    pingPosition = 'end';
-    pingStartBtn.classList.remove('active');
-    pingEndBtn.classList.add('active');
-  });
-
-  // emoji append toggle
-  emojiAddBtn.addEventListener('click', () => {
-    emojiActive = true;
-    emojiAddBtn.style.display = 'none';
-    emojiRemoveBtn.style.display = 'inline-block';
-  });
-  emojiRemoveBtn.addEventListener('click', () => {
-    emojiActive = false;
-    emojiAddBtn.style.display = 'inline-block';
-    emojiRemoveBtn.style.display = 'none';
-  });
-
-  // persistent message controls
-  persistentMsgInput.addEventListener('input', () => {
-    persistentMessage = persistentMsgInput.value.trim();
-  });
-  clearPersistentBtn.addEventListener('click', () => {
-    persistentMessage = '';
-    persistentMsgInput.value = '';
-  });
-
-  // update speed label
-  speedRange.addEventListener('input', () => {
-    speedValue.textContent = speedRange.value;
-  });
-
-  // parse input fields
-  function parseTokens() {
-    tokens = tokenInput.value.split('\n').map(s => s.trim()).filter(Boolean);
-  }
-  function parseChannels() {
-    channels = channelInput.value.split('\n').map(s => s.trim()).filter(Boolean);
-  }
-  function parseUserIds() {
-    userIds = userInput.value.split('\n').map(s => s.trim()).filter(Boolean);
-  }
-
-  // add filters list management
-  addFilterBtn.addEventListener('click', () => {
-    const key = filterKeyword.value.trim().toLowerCase();
-    const reply = filterReply.value.trim();
-    if (!key || !reply) return alert('both keyword and reply are required');
-    filters.push({key, reply});
-    filterKeyword.value = '';
-    filterReply.value = '';
-    updateFilterListUI();
-  });
-
-  function updateFilterListUI() {
-    filterList.innerHTML = '';
-    filters.forEach((filter, idx) => {
-      const div = document.createElement('div');
-      div.classList.add('filter-item');
-      const keyDiv = document.createElement('div');
-      keyDiv.textContent = filter.key;
-      const replyDiv = document.createElement('div');
-      replyDiv.textContent = filter.reply;
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'delete';
-      delBtn.addEventListener('click', () => {
-        filters.splice(idx, 1);
-        updateFilterListUI();
+    function animateStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(star => {
+        star.update();
+        star.draw();
       });
-      div.appendChild(keyDiv);
-      div.appendChild(replyDiv);
-      div.appendChild(delBtn);
-      filterList.appendChild(div);
-    });
-  }
-
-  // file input handler for wordlist upload
-  fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      wordlistArea.value = e.target.result;
-    };
-    reader.readAsText(file);
-  });
-
-  // auto sender
-  autoToggleBtn.addEventListener('click', () => {
-    if (isAutoSending) {
-      stopAutoSend();
-    } else {
-      startAutoSend();
+      requestAnimationFrame(animateStars);
     }
-  });
+    animateStars();
 
-  async function sendDiscordMessage(token, channelId, content) {
-    const url = `https://discord.com/api/v9/channels/${channelId}/messages`;
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          "Authorization": token,
-          "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0",
-          "Accept": "*/*",
-          "X-Context-Properties": "eyJsb2NhdGlvbiI6IkNoYXRUcmVlIn0="
-        },
-        body: JSON.stringify({content})
+    // UI elements
+    const tokenInput = document.getElementById('token');
+    const channelInput = document.getElementById('channelId');
+    const userInput = document.getElementById('userId');
+    const messageInput = document.getElementById('message');
+    const sendBtn = document.getElementById('sendBtn');
+    const wordlistArea = document.getElementById('wordlistArea');
+    const fileInput = document.getElementById('fileInput');
+    const autoToggleBtn = document.getElementById('autoToggleBtn');
+    const btnBold = document.getElementById('btnBold');
+    const btnUnbold = document.getElementById('btnUnbold');
+    const pingStartBtn = document.getElementById('pingStart');
+    const pingEndBtn = document.getElementById('pingEnd');
+    const emojiAddBtn = document.getElementById('emojiAddBtn');
+    const emojiRemoveBtn = document.getElementById('emojiRemoveBtn');
+    const colorWheel = document.getElementById('colorWheel');
+    const glowColorWheel = document.getElementById('glowColorWheel');
+    const persistentMsgInput = document.getElementById('persistentMsgInput');
+    const clearPersistentBtn = document.getElementById('clearPersistentBtn');
+    const rateLimitedSpan = document.getElementById('rateLimited');
+    const activeTokensUl = document.getElementById('activeTokens');
+    const activeChannelsUl = document.getElementById('activeChannels');
+    const activeUserIdsUl = document.getElementById('activeUserIds');
+    const pingMsSpan = document.getElementById('pingMs');
+    const currentServerSpan = document.getElementById('currentServer');
+    const currentChannelSpan = document.getElementById('currentChannel');
+    const currentTimeSpan = document.getElementById('currentTime');
+    const ipInfoSpan = document.getElementById('ipInfo');
+    const filterKeyword = document.getElementById('filterKeyword');
+    const filterReply = document.getElementById('filterReply');
+    const addFilterBtn = document.getElementById('addFilterBtn');
+    const filterList = document.getElementById('filterList');
+
+    // state
+    let isAutoSending = false;
+    let autoSendInterval = null;
+    let wordlistIndex = 0;
+    let boldMode = true;
+    let pingPosition = 'start'; // or 'end'
+    let emojiActive = false;
+    let persistentMessage = '';
+    let tokens = [];
+    let channels = [];
+    let userIds = [];
+    let filters = [];
+    let rateLimited = false;
+
+    // helper: sleep(ms)
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // color wheel controls
+    function updateColors() {
+      const bgColor = colorWheel.value;
+      const glowColor = glowColorWheel.value;
+      document.body.style.backgroundColor = bgColor;
+      document.querySelectorAll('.glow').forEach(el => {
+        el.style.boxShadow = `0 0 20px 6px ${glowColor}`;
+        el.style.borderColor = glowColor;
       });
-      if (res.status === 429) {
-        rateLimited = true;
-        rateLimitedSpan.textContent = 'yes';
-        const data = await res.json();
-        let waitTime = data.retry_after || 1000;
-        await sleep(waitTime + 200);
+    }
+    colorWheel.addEventListener('input', updateColors);
+    glowColorWheel.addEventListener('input', updateColors);
+    updateColors();
+
+    // handle bold toggle
+    btnBold.addEventListener('click', () => {
+      boldMode = true;
+      btnBold.classList.add('active');
+      btnUnbold.classList.remove('active');
+    });
+    btnUnbold.addEventListener('click', () => {
+      boldMode = false;
+      btnBold.classList.remove('active');
+      btnUnbold.classList.add('active');
+    });
+
+    // handle ping position toggle
+    pingStartBtn.addEventListener('click', () => {
+      pingPosition = 'start';
+      pingStartBtn.classList.add('active');
+      pingEndBtn.classList.remove('active');
+    });
+    pingEndBtn.addEventListener('click', () => {
+      pingPosition = 'end';
+      pingStartBtn.classList.remove('active');
+      pingEndBtn.classList.add('active');
+    });
+
+    // emoji append toggle
+    emojiAddBtn.addEventListener('click', () => {
+      emojiActive = true;
+      emojiAddBtn.style.display = 'none';
+      emojiRemoveBtn.style.display = 'inline-block';
+    });
+    emojiRemoveBtn.addEventListener('click', () => {
+      emojiActive = false;
+      emojiAddBtn.style.display = 'inline-block';
+      emojiRemoveBtn.style.display = 'none';
+    });
+
+    // persistent message controls
+    persistentMsgInput.addEventListener('input', () => {
+      persistentMessage = persistentMsgInput.value.trim();
+    });
+    clearPersistentBtn.addEventListener('click', () => {
+      persistentMessage = '';
+      persistentMsgInput.value = '';
+    });
+
+    // update speed label
+    const speedRange = document.getElementById('speedRange');
+    const speedValue = document.getElementById('speedValue');
+    speedRange.addEventListener('input', () => {
+      speedValue.textContent = speedRange.value;
+    });
+
+    // parse input fields
+    function parseTokens() {
+      tokens = tokenInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    function parseChannels() {
+      channels = channelInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+    function parseUserIds() {
+      userIds = userInput.value.split('\n').map(s => s.trim()).filter(Boolean);
+    }
+
+    // add filters list management
+    addFilterBtn.addEventListener('click', () => {
+      const key = filterKeyword.value.trim().toLowerCase();
+      const reply = filterReply.value.trim();
+      if (!key || !reply) return alert('both keyword and reply are required');
+      filters.push({key, reply});
+      filterKeyword.value = '';
+      filterReply.value = '';
+      updateFilterListUI();
+    });
+
+    function updateFilterListUI() {
+      filterList.innerHTML = '';
+      filters.forEach((filter, idx) => {
+        const div = document.createElement('div');
+        div.classList.add('filter-item');
+        const keyDiv = document.createElement('div');
+        keyDiv.textContent = filter.key;
+        const replyDiv = document.createElement('div');
+        replyDiv.textContent = filter.reply;
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'delete';
+        delBtn.addEventListener('click', () => {
+          filters.splice(idx, 1);
+          updateFilterListUI();
+        });
+        div.appendChild(keyDiv);
+        div.appendChild(replyDiv);
+        div.appendChild(delBtn);
+        filterList.appendChild(div);
+      });
+    }
+
+    // file input handler for wordlist upload
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        wordlistArea.value = e.target.result;
+      };
+      reader.readAsText(file);
+    });
+
+    // send message function
+    async function sendDiscordMessage(token, channelId, content) {
+      const url = `https://discord.com/api/v9/channels/${channelId}/messages`;
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            "Authorization": token,
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "*/*",
+            "X-Context-Properties": "eyJsb2NhdGlvbiI6IkNoYXRUcmVlIn0="
+          },
+          body: JSON.stringify({content})
+        });
+        if (res.status === 429) {
+          rateLimited = true;
+          rateLimitedSpan.textContent = 'yes';
+          const data = await res.json();
+          let waitTime = data.retry_after || 1000;
+          await sleep(waitTime + 200);
+          return null;
+        }
+        if (!res.ok) {
+          console.warn(`Failed to send message: ${res.status}`);
+          return null;
+        }
+        rateLimited = false;
+        rateLimitedSpan.textContent = 'no';
+        const json = await res.json();
+        return json;
+      } catch (err) {
+        console.error('sendDiscordMessage error:', err);
         return null;
       }
-      if (!res.ok) {
-        console.warn(`Failed to send message: ${res.status}`);
-        return null;
-      }
-      rateLimited = false;
-      rateLimitedSpan.textContent = 'no';
-      const json = await res.json();
-      return json;
-    } catch (err) {
-      console.error('sendDiscordMessage error:', err);
-      return null;
     }
-  }
 
-  async function sendAll() {
-    parseTokens();
-    parseChannels();
-    parseUserIds();
-    if (tokens.length === 0 || channels.length === 0) {
-      alert('Please provide at least one token and one channel ID');
-      return;
-    }
-    const baseMsg = messageInput.value.trim();
-    if (!baseMsg) {
-      alert('Please enter a message to send');
-      return;
-    }
-    const sendDelay = parseInt(speedRange.value, 10);
-
-    // Compose message with ping(s), bold, emoji, persistent message
-    let pingText = userIds.length > 0 ? userIds.map(id => `<@${id}>`).join(' ') + ' ' : '';
-    if (!boldMode) {
-      pingText = pingText.replace(/#/g, '');
-    }
-    let finalMessage = '';
-
-    for (let token of tokens) {
-      for (let channel of channels) {
-        let content = baseMsg;
-        if (boldMode) {
-          content = content.replace(/#/g, '**');
-        } else {
-          content = content.replace(/#/g, '');
-        }
-        if (emojiActive) {
-          content += ' 🔥';
-        }
-        if (persistentMessage) {
-          content += ' ' + persistentMessage;
-        }
-        if (pingPosition === 'start') {
-          finalMessage = `${pingText}${content}`;
-        } else {
-          finalMessage = `${content} ${pingText}`;
-        }
-        const result = await sendDiscordMessage(token, channel, finalMessage);
-        if (result) {
-          logMessage(token, channel, finalMessage);
-        }
-        await sleep(sendDelay);
-      }
-    }
-  }
-
-  // Log sent messages to HUD
-  function logMessage(token, channel, content) {
-    const msgEntry = document.createElement('div');
-    msgEntry.classList.add('msg-entry');
-    const img = document.createElement('img');
-    // Show a Discord bot icon for simplicity
-    img.src = 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png';
-    const contentDiv = document.createElement('div');
-    contentDiv.classList.add('msg-content');
-    const usernameDiv = document.createElement('div');
-    usernameDiv.classList.add('msg-username');
-    usernameDiv.textContent = `token: ${token.substring(0,5)}...`;
-    const textDiv = document.createElement('div');
-    textDiv.classList.add('msg-text');
-    textDiv.textContent = `#${channel} -> ${content}`;
-    contentDiv.appendChild(usernameDiv);
-    contentDiv.appendChild(textDiv);
-    msgEntry.appendChild(img);
-    msgEntry.appendChild(contentDiv);
-    messagesDiv.appendChild(msgEntry);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  }
-
-  sendBtn.addEventListener('click', sendAll);
-
-  // Auto sender loop
-  async function autoSendLoop() {
-    if (!isAutoSending) return;
-    const lines = wordlistArea.value.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length === 0) {
-      alert('Wordlist is empty!');
-      stopAutoSend();
-      return;
-    }
-    parseTokens();
-    parseChannels();
-    parseUserIds();
-    if (tokens.length === 0 || channels.length === 0) {
-      alert('Please provide tokens and channels to auto send');
-      stopAutoSend();
-      return;
-    }
-    const delay = parseInt(speedRange.value, 10);
-    let line = lines[wordlistIndex];
-    wordlistIndex = (wordlistIndex + 1) % lines.length;
-    let pingText = userIds.length > 0 ? userIds.map(id => `<@${id}>`).join(' ') + ' ' : '';
-    if (!boldMode) {
-      pingText = pingText.replace(/#/g, '');
-    }
-    for (let token of tokens) {
-      for (let channel of channels) {
-        let content = line;
-        if (boldMode) {
-          content = content.replace(/#/g, '**');
-        } else {
-          content = content.replace(/#/g, '');
-        }
-        if (emojiActive) {
-          content += ' 🔥';
-        }
-        if (persistentMessage) {
-          content += ' ' + persistentMessage;
-        }
-        let finalMessage = '';
-        if (pingPosition === 'start') {
-          finalMessage = `${pingText}${content}`;
-        } else {
-          finalMessage = `${content} ${pingText}`;
-        }
-        await sendDiscordMessage(token, channel, finalMessage);
-        logMessage(token, channel, finalMessage);
-        await sleep(delay);
-      }
-    }
-    if (isAutoSending) {
-      setTimeout(autoSendLoop, 10);
-    }
-  }
-
-  function startAutoSend() {
-    if (isAutoSending) return;
-    isAutoSending = true;
-    autoToggleBtn.textContent = 'stop auto sending';
-    wordlistIndex = 0;
-    autoSendLoop();
-  }
-
-  function stopAutoSend() {
-    isAutoSending = false;
-    autoToggleBtn.textContent = 'start auto sending';
-  }
-
-  // prevent selecting text on page for the background
-  document.body.style.userSelect = 'none';
-
-  // send message on enter (except shift+enter)
-  messageInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendAll();
-    }
-  });
-
-  // update HUD active tokens, channels, users
-  function updateHUDLists() {
-    activeTokensUl.innerHTML = '';
-    tokens.forEach(t => {
-      const li = document.createElement('li');
-      li.textContent = t.substring(0, 8) + '...';
-      activeTokensUl.appendChild(li);
-    });
-    activeChannelsUl.innerHTML = '';
-    channels.forEach(c => {
-      const li = document.createElement('li');
-      li.textContent = c;
-      activeChannelsUl.appendChild(li);
-    });
-    activeUserIdsUl.innerHTML = '';
-    userIds.forEach(u => {
-      const li = document.createElement('li');
-      li.textContent = u;
-      activeUserIdsUl.appendChild(li);
-    });
-  }
-
-  // update current time every second
-  function updateTime() {
-    const now = new Date();
-    currentTimeSpan.textContent = now.toLocaleTimeString();
-  }
-  setInterval(updateTime, 1000);
-  updateTime();
-
-  // update active lists every 3 seconds
-  setInterval(() => {
-    parseTokens();
-    parseChannels();
-    parseUserIds();
-    updateHUDLists();
-  }, 3000);
-  updateHUDLists();
-
-  // fetch IP info (freegeoip.app or ipinfo.io)
-  async function fetchIPInfo() {
-    try {
-      let res = await fetch('https://ipinfo.io/json?token=your_token_here'); // put a free token or use public API
-      if (!res.ok) {
-        res = await fetch('https://ipapi.co/json/');
-      }
-      if (!res.ok) {
-        ipInfoSpan.textContent = 'unavailable';
+    async function sendAll() {
+      parseTokens();
+      parseChannels();
+      parseUserIds();
+      if (tokens.length === 0 || channels.length === 0) {
+        alert('Please provide at least one token and one channel ID');
         return;
       }
-      const data = await res.json();
-      ipInfoSpan.textContent = `${data.ip} - ${data.city}, ${data.region}, ${data.country}`;
-    } catch {
-      ipInfoSpan.textContent = 'unavailable';
+      const baseMsg = messageInput.value.trim();
+      if (!baseMsg) {
+        alert('Please enter a message to send');
+        return;
+      }
+      const sendDelay = parseInt(speedRange.value, 10);
+
+      let pingText = userIds.length > 0 ? userIds.map(id => `<@${id}>`).join(' ') + ' ' : '';
+      if (!boldMode) {
+        pingText = pingText.replace(/#/g, '');
+      }
+      let finalMessage = '';
+
+      for (let token of tokens) {
+        for (let channel of channels) {
+          let content = baseMsg;
+          if (boldMode) {
+            content = content.replace(/#/g, '**');
+          } else {
+            content = content.replace(/#/g, '');
+          }
+          if (emojiActive) {
+            content += ' 🔥';
+          }
+          if (persistentMessage) {
+            content += ' ' + persistentMessage;
+          }
+          if (pingPosition === 'start') {
+            finalMessage = `${pingText}${content}`;
+          } else {
+            finalMessage = `${content} ${pingText}`;
+          }
+          const result = await sendDiscordMessage(token, channel, finalMessage);
+          if (result) {
+            logMessage(token, channel, finalMessage);
+          }
+          await sleep(sendDelay);
+        }
+      }
     }
-  }
-  fetchIPInfo();
 
-</script>
+    function logMessage(token, channel, content) {
+      const messagesDiv = document.getElementById('messages');
+      if (!messagesDiv) return;
+      const msgEntry = document.createElement('div');
+      msgEntry.classList.add('msg-entry');
+      const img = document.createElement('img');
+      img.src = 'https://cdn-icons-png.flaticon.com/512/2111/2111370.png';
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('msg-content');
+      const usernameDiv = document.createElement('div');
+      usernameDiv.classList.add('msg-username');
+      usernameDiv.textContent = `token: ${token.substring(0,5)}...`;
+      const textDiv = document.createElement('div');
+      textDiv.classList.add('msg-text');
+      textDiv.textContent = `#${channel} -> ${content}`;
+      contentDiv.appendChild(usernameDiv);
+      contentDiv.appendChild(textDiv);
+      msgEntry.appendChild(img);
+      msgEntry.appendChild(contentDiv);
+      messagesDiv.appendChild(msgEntry);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
 
+    sendBtn.addEventListener('click', sendAll);
+
+    // Auto sender loop
+    async function autoSendLoop() {
+      if (!isAutoSending) return;
+      const lines = wordlistArea.value.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) {
+        alert('Wordlist is empty!');
+        stopAutoSend();
+        return;
+      }
+      parseTokens();
+      parseChannels();
+      parseUserIds();
+      if (tokens.length === 0 || channels.length === 0) {
+        alert('Please provide tokens and channels to auto send');
+        stopAutoSend();
+        return;
+      }
+      const delay = parseInt(speedRange.value, 10);
+      let line = lines[wordlistIndex];
+      wordlistIndex = (wordlistIndex + 1) % lines.length;
+      let pingText = userIds.length > 0 ? userIds.map(id => `<@${id}>`).join(' ') + ' ' : '';
+      if (!boldMode) {
+        pingText = pingText.replace(/#/g, '');
+      }
+      for (let token of tokens) {
+        for (let channel of channels) {
+          let content = line;
+          if (boldMode) {
+            content = content.replace(/#/g, '**');
+          } else {
+            content = content.replace(/#/g, '');
+          }
+          if (emojiActive) {
+            content += ' 🔥';
+          }
+          if (persistentMessage) {
+            content += ' ' + persistentMessage;
+          }
+          let finalMessage = '';
+          if (pingPosition === 'start') {
+            finalMessage = `${pingText}${content}`;
+          } else {
+            finalMessage = `${content} ${pingText}`;
+          }
+          await sendDiscordMessage(token, channel, finalMessage);
+          logMessage(token, channel, finalMessage);
+          await sleep(delay);
+        }
+      }
+      if (isAutoSending) {
+        setTimeout(autoSendLoop, 10);
+      }
+    }
+
+    function startAutoSend() {
+      if (isAutoSending) return;
+      isAutoSending = true;
+      autoToggleBtn.textContent = 'stop auto sending';
+      wordlistIndex = 0;
+      autoSendLoop();
+    }
+
+    function stopAutoSend() {
+      isAutoSending = false;
+      autoToggleBtn.textContent = 'start auto sending';
+    }
+
+    autoToggleBtn.addEventListener('click', () => {
+      if (isAutoSending) {
+        stopAutoSend();
+      } else {
+        startAutoSend();
+      }
+    });
+
+    // prevent selecting text on page for the background
+    document.body.style.userSelect = 'none';
+
+    // send message on enter (except shift+enter)
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendAll();
+      }
+    });
+
+    // update HUD active tokens, channels, users
+    function updateHUDLists() {
+      activeTokensUl.innerHTML = '';
+      tokens.forEach(t => {
+        const li = document.createElement('li');
+        li.textContent = t.substring(0, 8) + '...';
+        activeTokensUl.appendChild(li);
+      });
+      activeChannelsUl.innerHTML = '';
+      channels.forEach(c => {
+        const li = document.createElement('li');
+        li.textContent = c;
+        activeChannelsUl.appendChild(li);
+      });
+      activeUserIdsUl.innerHTML = '';
+      userIds.forEach(u => {
+        const li = document.createElement('li');
+        li.textContent = u;
+        activeUserIdsUl.appendChild(li);
+      });
+    }
+
+    // update current time every second
+    function updateTime() {
+      const now = new Date();
+      currentTimeSpan.textContent = now.toLocaleTimeString();
+    }
+    setInterval(updateTime, 1000);
+    updateTime();
+
+    // update active lists every 3 seconds
+    setInterval(() => {
+      parseTokens();
+      parseChannels();
+      parseUserIds();
+      updateHUDLists();
+    }, 3000);
+    updateHUDLists();
+
+    // fetch IP info
+    async function fetchIPInfo() {
+      try {
+        let res = await fetch('https://ipinfo.io/json');
+        if (!res.ok) {
+          res = await fetch('https://ipapi.co/json/');
+        }
+        if (!res.ok) {
+          ipInfoSpan.textContent = 'unavailable';
+          return;
+        }
+        const data = await res.json();
+        ipInfoSpan.textContent = `${data.ip} - ${data.city}, ${data.region}, ${data.country}`;
+      } catch {
+        ipInfoSpan.textContent = 'unavailable';
+      }
+    }
+    fetchIPInfo();
+
+  </script>
 </body>
 </html>
-
