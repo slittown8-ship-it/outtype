@@ -3,410 +3,133 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Chatpack | made by agony</title>
+  <title>Discord Web Pinger + Auto Wordlist + Filters + Emoji</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@600;700&display=swap');
-    :root {
-      --bg-color: #0e0e0e;
-      --input-bg: #111;
-      --input-border: #444;
-      --input-glow: #6f5af9;
-      --text-color: white;
-      --btn-bg: #5865f2;
-      --btn-bg-hover: #4752c4;
-      --glow-color: #6f5af9;
-    }
-    /* reset */
     * {
       margin: 0; padding: 0; box-sizing: border-box; user-select: none;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    html, body {
-      height: 100%;
-      background: var(--bg-color);
-      color: var(--text-color);
-      overflow: hidden;
     }
     body {
+      background-color: #0e0e0e;
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       gap: 20px;
-      padding: 25px 30px;
+      padding: 30px;
       min-height: 100vh;
-      flex-wrap: wrap;
-      align-items: flex-start;
-      user-select: none;
-      transition: background-color 0.5s ease;
     }
-
-    /* Inputs modern */
-    input[type=text], textarea, #tokensArea, #userIdsArea, #channelIdsArea {
-      background: var(--input-bg);
-      border: 1.5px solid var(--input-border);
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 15px;
-      color: var(--text-color);
-      width: 100%;
-      transition:
-        border-color 0.3s ease,
-        box-shadow 0.3s ease;
-      outline-offset: 0;
-      outline: none;
-      box-shadow: 0 0 6px 0 transparent;
-      resize: vertical;
-      font-weight: 600;
-      user-select: text;
-    }
-    input[type=text]:focus, textarea:focus, #tokensArea:focus, #userIdsArea:focus, #channelIdsArea:focus {
-      border-color: var(--btn-bg);
-      box-shadow: 0 0 15px var(--btn-bg);
-      background: #222;
-      outline: none;
-    }
-    textarea, #tokensArea, #userIdsArea, #channelIdsArea {
-      min-height: 70px;
-      max-height: 130px;
-      font-family: monospace;
-    }
-
-    /* Buttons */
-    button {
-      cursor: pointer;
-      background: var(--btn-bg);
-      border: none;
-      border-radius: 10px;
-      padding: 12px 0;
-      color: white;
-      font-weight: 700;
-      font-size: 16px;
-      letter-spacing: 0.9px;
-      user-select: none;
-      transition: background-color 0.3s ease;
-      box-shadow: 0 0 12px var(--btn-bg);
-    }
-    button:hover:not(.active) {
-      background: var(--btn-bg-hover);
-      box-shadow: 0 0 20px var(--btn-bg-hover);
-    }
-    button.active {
-      background: var(--btn-bg-hover);
-      box-shadow: 0 0 22px var(--btn-bg-hover);
-    }
-
-    /* Containers */
     .container, .sidepanel, .sidepanel-small {
-      background: var(--input-bg);
-      border-radius: 14px;
-      padding: 22px 25px;
-      box-shadow: 0 0 24px var(--glow-color);
+      background: #111;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       flex-shrink: 0;
-      user-select: none;
-      color: var(--text-color);
     }
     .container {
-      max-width: 630px;
+      max-width: 620px;
       width: 100%;
-      flex-grow: 1;
     }
     .sidepanel {
-      width: 420px;
-      height: 610px;
+      width: 400px;
+      height: 580px;
       overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--btn-bg) transparent;
     }
     .sidepanel-small {
-      width: 280px;
-      height: 610px;
+      width: 260px;
+      height: 580px;
       overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--btn-bg) transparent;
     }
-    .sidepanel::-webkit-scrollbar, .sidepanel-small::-webkit-scrollbar {
-      width: 8px;
-    }
-    .sidepanel::-webkit-scrollbar-thumb, .sidepanel-small::-webkit-scrollbar-thumb {
-      background: var(--btn-bg);
-      border-radius: 8px;
-    }
-    .sidepanel::-webkit-scrollbar-track, .sidepanel-small::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    /* Titles */
     h1, h2, h3 {
       font-weight: 700;
-      letter-spacing: 1.3px;
-      user-select: none;
+      letter-spacing: 1.2px;
     }
-    h1 {
-      font-size: 30px;
-      color: var(--btn-bg);
-      margin-bottom: 10px;
-      text-shadow:
-        0 0 4px var(--btn-bg),
-        0 0 8px var(--btn-bg);
-    }
-    h2 {
-      font-size: 22px;
-      margin-bottom: 12px;
-      color: var(--text-color);
-    }
-    h3 {
-      font-size: 17px;
-      margin-bottom: 8px;
-    }
-
-    /* Controls group */
-    .controls {
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      flex-wrap: wrap;
-      user-select: none;
-    }
-    .slider-container {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      font-size: 14px;
-      color: var(--text-color);
-      min-width: 150px;
-      user-select: none;
-    }
-    input[type=range] {
-      -webkit-appearance: none;
-      width: 100%;
-      height: 7px;
-      border-radius: 6px;
-      background: var(--input-border);
-      outline: none;
-      margin-top: 6px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--btn-bg);
-      cursor: pointer;
-      border: 2.5px solid #111;
-      transition: background-color 0.25s ease;
-    }
-    input[type=range]:hover::-webkit-slider-thumb {
-      background: var(--btn-bg-hover);
-    }
-    .toggle-buttons {
-      display: flex;
-      gap: 10px;
-      user-select: none;
-    }
-    .toggle-buttons button {
-      background: var(--input-border);
-      color: var(--text-color);
-      font-weight: 600;
-      font-size: 14px;
-      padding: 7px 16px;
-      border-radius: 12px;
-      border: 2px solid transparent;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-    .toggle-buttons button.active {
-      background: var(--btn-bg);
-      border-color: var(--btn-bg-hover);
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; margin-bottom: 10px; user-select: none; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+    input[type=text], textarea {
+      background: #1a1a1a;
+      border: 1px solid #444;
       color: white;
-    }
-
-    /* Textarea wordlist & filters */
-    .wordlist-textarea, #tokensArea, #userIdsArea, #channelIdsArea {
-      font-family: monospace;
-      font-size: 14px;
-      line-height: 1.3;
-      white-space: pre-wrap;
-      user-select: text;
+      padding: 12px 14px;
+      font-size: 15px;
+      border-radius: 6px;
+      width: 100%;
+      transition: border-color 0.25s ease;
       resize: vertical;
     }
-
-    /* Wordlist file upload */
-    .file-upload {
-      font-size: 14px;
-      user-select: none;
+    input[type=text]:focus, textarea:focus {
+      outline: none;
+      border-color: #5865f2;
+      background: #222;
     }
-    .file-upload input[type=file] {
-      margin-top: 6px;
-      cursor: pointer;
-      user-select: none;
+    textarea {
+      min-height: 90px;
+      max-height: 180px;
+      font-family: monospace;
     }
-
-    /* Auto send & filter UI buttons */
-    .auto-control, .emoji-control, .ping-position-control, .persistent-msg-control {
-      margin-top: 14px;
-      text-align: center;
-      user-select: none;
-    }
-    .auto-control button, .emoji-control button, .ping-position-control button, .persistent-msg-control button {
-      width: 100%;
-      font-weight: 700;
-      font-size: 17px;
-      border-radius: 12px;
-    }
-
-    /* Filter list */
-    .filter-list {
-      max-height: 230px;
-      overflow-y: auto;
-      margin-top: 8px;
-      background: var(--input-bg);
-      border-radius: 10px;
-      padding: 14px 14px 10px;
-      font-size: 14px;
-      user-select: text;
-      border: 1.3px solid var(--input-border);
-      box-shadow:
-        inset 0 0 10px #222;
-    }
-    .filter-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 7px;
-      align-items: center;
-      gap: 12px;
-    }
-    .filter-item div {
-      flex-grow: 1;
-      overflow-wrap: break-word;
-      user-select: text;
-      color: #ccc;
-    }
-    .filter-item button {
-      padding: 5px 14px;
-      font-size: 13px;
-      background: #bb3333;
-      border-radius: 8px;
+    button {
+      padding: 12px 0;
+      background: #5865f2;
       border: none;
-      cursor: pointer;
       color: white;
+      cursor: pointer;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.8px;
+      transition: background 0.25s ease;
       user-select: none;
-      transition: background-color 0.25s ease;
     }
-    .filter-item button:hover {
-      background: #dd4444;
+    button:hover:not(.active) {
+      background: #4752c4;
     }
-
-    /* HUD (rate limit + info) */
+    button.active {
+      background: #344ac7 !important;
+    }
+    label {
+      font-size: 14px;
+      user-select: none;
+      margin-bottom: 6px;
+      display: block;
+    }
     .hud {
       position: fixed;
       top: 15px;
       right: 15px;
-      background: var(--input-bg);
-      border-radius: 14px;
-      padding: 22px 22px 16px 22px;
-      width: 420px;
-      height: 610px;
-      box-shadow: 0 0 32px var(--glow-color);
+      background: #181818;
+      border-radius: 10px;
+      padding: 15px;
+      width: 340px;
+      height: 580px;
+      box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
       display: flex;
       flex-direction: column;
       font-size: 13px;
-      color: #ccc;
+      color: #ddd;
       overflow: hidden;
       user-select: none;
       z-index: 9999;
     }
     .hud-header {
       font-weight: 700;
-      font-size: 22px;
-      margin-bottom: 16px;
-      border-bottom: 2px solid var(--btn-bg);
-      padding-bottom: 12px;
-      color: var(--btn-bg);
-      text-shadow:
-        0 0 6px var(--btn-bg),
-        0 0 10px var(--btn-bg);
-      user-select: none;
+      font-size: 18px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 8px;
     }
-    .tokens-list {
-      max-height: 170px;
-      overflow-y: auto;
-      border: 1.4px solid var(--input-border);
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 16px;
-      background: #121212;
-    }
-    .token-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-      padding: 6px 10px;
-      background: #222;
-      border-radius: 10px;
-    }
-    .token-pfp {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: #333;
-      flex-shrink: 0;
-      object-fit: cover;
-    }
-    .token-info {
-      flex-grow: 1;
-      font-size: 14px;
-      user-select: text;
-      color: #ccc;
-    }
-    .token-info b {
-      color: var(--btn-bg);
-    }
-    .status-bar {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 14px;
-      user-select: none;
-      color: #ccc;
-      padding: 8px 12px;
-      background: #121212;
-      border-radius: 12px;
-      border: 1.2px solid var(--input-border);
-    }
-    .status-bar span {
-      display: inline-block;
-      margin-right: 18px;
-      user-select: none;
-    }
-    .status-bar .ratelimited {
-      color: #e55151;
-      font-weight: 700;
-    }
-    .status-bar .ok {
-      color: #7ddb7d;
-      font-weight: 700;
-    }
-
-    /* Message activity list */
     #messages {
       overflow-y: auto;
       flex-grow: 1;
-      padding-right: 6px;
-      user-select: text;
-      color: #bbb;
-      font-size: 13px;
+      padding-right: 4px;
     }
     #messages::-webkit-scrollbar {
-      width: 8px;
+      width: 7px;
     }
     #messages::-webkit-scrollbar-thumb {
-      background: var(--btn-bg);
-      border-radius: 8px;
+      background: #5865f2;
+      border-radius: 4px;
     }
     #messages::-webkit-scrollbar-track {
       background: transparent;
@@ -417,24 +140,25 @@
       gap: 10px;
       margin-bottom: 8px;
       background: #222;
-      padding: 7px 11px;
-      border-radius: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
       word-wrap: break-word;
+      user-select: text;
     }
     .msg-entry img {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       border-radius: 50%;
       flex-shrink: 0;
       background: #444;
     }
     .msg-content {
-      max-width: 270px;
+      max-width: 260px;
     }
     .msg-username {
       font-weight: 700;
       font-size: 14px;
-      color: var(--btn-bg);
+      color: #5865f2;
       margin-bottom: 3px;
       user-select: text;
     }
@@ -444,398 +168,477 @@
       white-space: pre-wrap;
       user-select: text;
     }
-
-    /* Labels */
-    label {
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      user-select: none;
+      flex-wrap: wrap;
+    }
+    .slider-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      color: #bbb;
+      min-width: 150px;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 5px;
+      background: #444;
+      outline: none;
+      margin-top: 5px;
+      cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #5865f2;
+      cursor: pointer;
+      border: 2px solid #333;
+      transition: background 0.25s ease;
+    }
+    input[type=range]:hover::-webkit-slider-thumb {
+      background: #4752c4;
+    }
+    .toggle-buttons {
+      display: flex;
+      gap: 10px;
+      user-select: none;
+    }
+    .toggle-buttons button {
+      background: #333;
+      color: #ddd;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .toggle-buttons button.active {
+      background: #5865f2;
+      border-color: #4752c4;
+      color: white;
+    }
+    .file-upload {
+      margin-top: 8px;
       font-size: 14px;
       user-select: none;
-      margin-bottom: 8px;
-      display: block;
-      color: #ddd;
+    }
+    .file-upload input[type=file] {
+      margin-top: 5px;
+      cursor: pointer;
+    }
+    .auto-control, .emoji-control, .ping-position-control, .persistent-msg-control {
+      margin-top: 10px;
+      text-align: center;
+      user-select: none;
+    }
+    .auto-control button, .emoji-control button, .ping-position-control button, .persistent-msg-control button {
+      width: 100%;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .wordlist-textarea {
+      height: 250px;
+      font-family: monospace;
+      font-size: 13px;
+      resize: vertical;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      color: white;
+      padding: 12px 14px;
+      border-radius: 6px;
+      overflow-y: auto;
+    }
+    .filter-list {
+      max-height: 210px;
+      overflow-y: auto;
+      margin-top: 8px;
+      background: #222;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 14px;
+      user-select: text;
+    }
+    .filter-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      align-items: center;
+      gap: 10px;
+    }
+    .filter-item div {
+      flex-grow: 1;
+      overflow-wrap: break-word;
+    }
+    .filter-item button {
+      padding: 4px 10px;
+      font-size: 13px;
+      background: #722;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      color: white;
+    }
+    .filter-item button:hover {
+      background: #a33;
+    }
+    input[type=text].filter-key, input[type=text].filter-reply {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #1a1a1a;
+      color: white;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
+  <div class="container">
+    <h1>Discord Web Pinger</h1>
+    <input id="token" placeholder="Your Discord Token" autocomplete="off" spellcheck="false" />
+    <input id="channelId" placeholder="Channel ID" autocomplete="off" spellcheck="false" />
+    <input id="userId" placeholder="User ID to ping" autocomplete="off" spellcheck="false" />
 
-  <canvas id="bgcanvas" style="position: fixed; z-index: 0; top:0; left:0; width:100vw; height:100vh;"></canvas>
-
-  <div class="container" style="z-index:1;">
-    <h1>Discord Web Chatpack | made by agony</h1>
-
-    <label for="tokensArea">Discord Token(s) (one per line):</label>
-    <textarea id="tokensArea" spellcheck="false" placeholder="Paste your Discord tokens here..."></textarea>
-
-    <label for="channelIdsArea">Channel ID(s) (comma or newline separated):</label>
-    <textarea id="channelIdsArea" spellcheck="false" placeholder="Enter channel IDs here..."></textarea>
-
-    <label for="userIdsArea">User ID(s) to ping (comma or newline separated):</label>
-    <textarea id="userIdsArea" spellcheck="false" placeholder="Enter user IDs to ping here..."></textarea>
-
-    <div class="controls" style="margin-top:10px;">
-      <div class="slider-container" style="flex-grow: 1;">
-        <label for="sendSpeedRange">Send Speed (ms delay between messages): <span id="sendSpeedLabel">1500</span> ms</label>
-        <input type="range" id="sendSpeedRange" min="300" max="5000" step="100" value="1500" />
+    <div class="controls">
+      <div class="slider-container">
+        <label for="speedRange">Send Speed: <span id="speedValue">1000</span> ms</label>
+        <input type="range" id="speedRange" min="200" max="5000" step="100" value="1000" />
       </div>
-      <div class="toggle-buttons">
-        <button id="btnBold" title="Add # at start of message">bold (#)</button>
-        <button id="btnUnbold" class="active" title="No #">unbold</button>
+      <div class="toggle-buttons" title="Message Style">
+        <button id="btnBold" class="active">Bold (#)</button>
+        <button id="btnUnbold">Unbold</button>
       </div>
     </div>
 
-    <div class="controls" style="margin-top:8px;">
-      <div class="toggle-buttons" style="width: 100%;">
-        <button id="pingStartBtn" class="active" title="Ping users at message start">ping start</button>
-        <button id="pingEndBtn" title="Ping users at message end">ping end</button>
+    <textarea id="message" placeholder="Message to send" rows="5" spellcheck="false"></textarea>
+
+    <div class="persistent-msg-control">
+      <label for="persistentMsgInput" style="margin-bottom:6px;">Persistent message (appended to every send):</label>
+      <textarea id="persistentMsgInput" rows="3" placeholder="Type message to always append, or leave empty to disable." spellcheck="false" style="resize: vertical;"></textarea>
+      <button id="clearPersistentBtn" style="margin-top: 6px; background:#a33;">Remove Persistent Message</button>
+    </div>
+
+    <button id="sendBtn">Send Message</button>
+
+    <div class="ping-position-control">
+      <label>Ping Position:</label>
+      <div class="toggle-buttons" style="justify-content: center;">
+        <button id="pingStart" class="active">Ping at Start</button>
+        <button id="pingEnd">Ping at End</button>
       </div>
     </div>
 
-    <label for="persistentMsgInput" style="margin-top:14px;">Persistent message (appended to every sent message):</label>
-    <textarea id="persistentMsgInput" spellcheck="false" placeholder="Add message to append always..."></textarea>
-    <button id="clearPersistentBtn" style="margin-top:6px; width: 100%;">Clear persistent message</button>
+    <div class="emoji-control">
+      <button id="emojiAddBtn">Add Emoji</button>
+      <button id="emojiRemoveBtn" style="display:none; background:#a33;">Remove Emoji</button>
+    </div>
+  </div>
 
-    <label for="messageInput" style="margin-top:14px;">Message to send:</label>
-    <textarea id="messageInput" spellcheck="false" placeholder="Type your message and press Enter to send..."></textarea>
-    <button id="sendBtn" style="margin-top:8px;">Send</button>
+  <div class="sidepanel">
+    <h2>Wordlist / Auto Sender</h2>
+    <label for="wordlistArea">Paste or type wordlist (lines and indented lines will send sequentially):</label>
+    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="Example:\nhello\n  world\nfoo\n  bar"></textarea>
+
+    <label class="file-upload" for="fileInput">Or upload a .txt file:</label>
+    <input type="file" id="fileInput" accept=".txt" />
 
     <div class="auto-control">
       <button id="autoToggleBtn">Start Auto Sending</button>
     </div>
-
-    <label for="wordlistArea" style="margin-top: 16px;">Wordlist (one phrase per line, indents allowed for sequences):</label>
-    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="Type or upload your wordlist here..."></textarea>
-
-    <div class="file-upload">
-      <label for="fileInput">Upload wordlist .txt file:</label>
-      <input type="file" id="fileInput" accept=".txt" />
-    </div>
-
-    <div class="emoji-control" style="margin-top:14px;">
-      <button id="emojiAddBtn">Add Emoji</button>
-      <button id="emojiRemoveBtn" style="display:none;">Remove Emoji</button>
-    </div>
-
-    <div class="filters-section" style="margin-top:22px;">
-      <h2>Filters & Auto Replies</h2>
-      <label for="filterKeywordInput">Filter keyword:</label>
-      <input type="text" id="filterKeywordInput" placeholder="Keyword to detect..." />
-      <label for="filterReplyInput" style="margin-top:6px;">Reply to send:</label>
-      <input type="text" id="filterReplyInput" placeholder="Reply when keyword detected..." />
-      <button id="addFilterBtn" style="margin-top:8px; width: 100%;">Add Filter</button>
-      <div class="filter-list" id="filterListDiv"></div>
-    </div>
   </div>
 
-  <!-- HUD Panel -->
-  <div class="hud" id="hudPanel" style="z-index: 2;">
-    <div class="hud-header">Token & Status Info</div>
-    <div id="rateLimitStatus" class="status-bar ok">Not rate limited</div>
-    <div id="timeStatus" class="status-bar">Local Time: --:--</div>
-    <div id="channelServerStatus" class="status-bar">Channel: -- | Server: --</div>
-    <div id="pingStatus" class="status-bar">Ping: -- ms</div>
-    <div class="tokens-list" id="tokensList"></div>
+  <div class="sidepanel-small" style="padding-top: 4px;">
+    <h2>Filters</h2>
+    <label for="filterKeyword">Keyword to detect:</label>
+    <input id="filterKeyword" type="text" placeholder="e.g. loser" autocomplete="off" spellcheck="false" class="filter-key" />
+    <label for="filterReply">Reply to send:</label>
+    <input id="filterReply" type="text" placeholder="e.g. I'm not a loser" autocomplete="off" spellcheck="false" class="filter-reply" />
+    <button id="addFilterBtn" style="margin-bottom: 10px;">Add Filter</button>
+
+    <div class="filter-list" id="filterList"></div>
   </div>
 
-  <!-- Canvas Overlay for background animation -->
-  <canvas id="starsCanvas" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:0; pointer-events:none;"></canvas>
+  <div class="hud" id="hud">
+    <div class="hud-header">Channel Activity</div>
+    <div id="messages"></div>
+  </div>
 
 <script>
-(() => {
-  // === DOM Elements ===
-  const tokensArea = document.getElementById('tokensArea');
-  const channelIdsArea = document.getElementById('channelIdsArea');
-  const userIdsArea = document.getElementById('userIdsArea');
-  const sendSpeedRange = document.getElementById('sendSpeedRange');
-  const sendSpeedLabel = document.getElementById('sendSpeedLabel');
+  // ELEMENTS
+  const tokenInput = document.getElementById('token');
+  const channelInput = document.getElementById('channelId');
+  const userInput = document.getElementById('userId');
+  const messageInput = document.getElementById('message');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesDiv = document.getElementById('messages');
+  const speedRange = document.getElementById('speedRange');
+  const speedValue = document.getElementById('speedValue');
   const btnBold = document.getElementById('btnBold');
   const btnUnbold = document.getElementById('btnUnbold');
-  const pingStartBtn = document.getElementById('pingStartBtn');
-  const pingEndBtn = document.getElementById('pingEndBtn');
-  const persistentMsgInput = document.getElementById('persistentMsgInput');
-  const clearPersistentBtn = document.getElementById('clearPersistentBtn');
-  const messageInput = document.getElementById('messageInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const autoToggleBtn = document.getElementById('autoToggleBtn');
   const wordlistArea = document.getElementById('wordlistArea');
   const fileInput = document.getElementById('fileInput');
+  const autoToggleBtn = document.getElementById('autoToggleBtn');
+  const pingStartBtn = document.getElementById('pingStart');
+  const pingEndBtn = document.getElementById('pingEnd');
   const emojiAddBtn = document.getElementById('emojiAddBtn');
   const emojiRemoveBtn = document.getElementById('emojiRemoveBtn');
-  const filterKeywordInput = document.getElementById('filterKeywordInput');
-  const filterReplyInput = document.getElementById('filterReplyInput');
+  const persistentMsgInput = document.getElementById('persistentMsgInput');
+  const clearPersistentBtn = document.getElementById('clearPersistentBtn');
+  const filterKeywordInput = document.getElementById('filterKeyword');
+  const filterReplyInput = document.getElementById('filterReply');
   const addFilterBtn = document.getElementById('addFilterBtn');
-  const filterListDiv = document.getElementById('filterListDiv');
+  const filterListDiv = document.getElementById('filterList');
 
-  const rateLimitStatus = document.getElementById('rateLimitStatus');
-  const timeStatus = document.getElementById('timeStatus');
-  const channelServerStatus = document.getElementById('channelServerStatus');
-  const pingStatus = document.getElementById('pingStatus');
-  const tokensList = document.getElementById('tokensList');
-
-  // STATE VARIABLES
-  let tokens = [];
-  let channels = [];
-  let userIds = [];
-  let sendCooldown = 1500;
-  let isBold = false;
-  let pingAtStart = true;
-  let persistentMessage = "";
-  let emojiChar = null;
-  let emojiMode = null; // "react" or "append"
-  let filters = [];
-  let sendingLocked = false;
+  // STATE
+  let sendCooldown = parseInt(speedRange.value, 10);
+  let lastSendTime = 0;
+  let isBold = true;
   let autoSending = false;
   let autoTimer = null;
-
-  // Round robin indices
-  let tokenIndex = 0;
-  let channelIndex = 0;
-
-  // Wordlist parsed
   let parsedWordlist = [];
   let flatWordlist = [];
   let autoIndex = 0;
+  let pingAtStart = true;
+  let emojiMode = null; // null, "react" or "append"
+  let emojiChar = null;
+  let persistentMessage = "";
+  let sendingLocked = false; // to prevent spam send calls
 
-  // Rate limit tracking
-  let tokenRateLimited = new Set();
+  // FILTERS
+  let filters = [];
 
-  // USERID + TOKEN PARSING
-  function parseMultiLines(input) {
-    // accepts comma, newline, or space separated (space only if no commas/newlines)
-    if(!input) return [];
-    let lines = input.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    if(lines.length === 1 && lines[0].includes(',')) {
-      return lines[0].split(',').map(s => s.trim()).filter(Boolean);
-    }
-    return lines;
+  // HELPERS
+  function sanitize(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/\'/g, "&#039;");
   }
 
-  function updateInputsToState() {
-    tokens = parseMultiLines(tokensArea.value);
-    channels = parseMultiLines(channelIdsArea.value);
-    userIds = parseMultiLines(userIdsArea.value);
-  }
+  // === SPEED SLIDER ===
+  speedRange.addEventListener('input', () => {
+    sendCooldown = parseInt(speedRange.value, 10);
+    speedValue.textContent = sendCooldown;
+  });
 
-  // BUTTON ACTIVE TOGGLE HELPERS
-  function setActive(button, active) {
-    if(active) button.classList.add('active');
-    else button.classList.remove('active');
-  }
-
-  // INITIAL UI SETUP
-  function setupUI() {
-    // Bold buttons
-    btnBold.onclick = () => {
-      isBold = true;
-      setActive(btnBold, true);
-      setActive(btnUnbold, false);
-    };
-    btnUnbold.onclick = () => {
-      isBold = false;
-      setActive(btnUnbold, true);
-      setActive(btnBold, false);
-    };
-    // Ping position buttons
-    pingStartBtn.onclick = () => {
-      pingAtStart = true;
-      setActive(pingStartBtn, true);
-      setActive(pingEndBtn, false);
-    };
-    pingEndBtn.onclick = () => {
-      pingAtStart = false;
-      setActive(pingEndBtn, true);
-      setActive(pingStartBtn, false);
-    };
-    // Clear persistent
-    clearPersistentBtn.onclick = () => {
-      persistentMessage = "";
-      persistentMsgInput.value = "";
-    };
-    persistentMsgInput.oninput = () => {
-      persistentMessage = persistentMsgInput.value.trim();
-    };
-
-    // Emoji buttons
-    emojiAddBtn.onclick = () => {
-      let emoji = prompt("Enter an emoji (unicode or Discord emoji code) to add:");
-      if(!emoji) return;
-      let react = confirm("React to your own messages with this emoji?\nPress OK for react, Cancel to append emoji to messages.");
-      emojiChar = emoji;
-      emojiMode = react ? "react" : "append";
-      emojiAddBtn.style.display = "none";
-      emojiRemoveBtn.style.display = "block";
-    };
-    emojiRemoveBtn.onclick = () => {
-      emojiChar = null;
-      emojiMode = null;
-      emojiRemoveBtn.style.display = "none";
-      emojiAddBtn.style.display = "block";
-    };
-
-    // Add filter
-    addFilterBtn.onclick = () => {
-      let kw = filterKeywordInput.value.trim().toLowerCase();
-      let rp = filterReplyInput.value.trim();
-      if(!kw || !rp) {
-        alert("Both filter keyword and reply are required.");
-        return;
-      }
-      filters.push({keyword: kw, reply: rp});
-      filterKeywordInput.value = "";
-      filterReplyInput.value = "";
-      renderFilters();
-    };
-
-    // Send speed slider
-    sendSpeedRange.oninput = () => {
-      sendCooldown = parseInt(sendSpeedRange.value);
-      sendSpeedLabel.textContent = sendCooldown;
-    };
-
-    // Send button
-    sendBtn.onclick = () => {
-      sendCurrentMessage();
-    };
-
-    // Enter key sends message + clears input
-    messageInput.addEventListener('keydown', e => {
-      if(e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendCurrentMessage();
-      }
-    });
-
-    // File upload for wordlist
-    fileInput.onchange = e => {
-      let file = e.target.files[0];
-      if(!file) return;
-      if(!file.name.endsWith('.txt')) {
-        alert("Please upload a .txt file");
-        return;
-      }
-      let reader = new FileReader();
-      reader.onload = evt => {
-        wordlistArea.value = evt.target.result;
-      };
-      reader.readAsText(file);
-    };
-
-    // Auto send toggle
-    autoToggleBtn.onclick = () => {
-      if(autoSending) stopAutoSending();
-      else startAutoSending();
-    };
-
-    // Initial states
+  // === BOLD TOGGLE ===
+  btnBold.addEventListener('click', () => {
+    isBold = true;
+    btnBold.classList.add('active');
+    btnUnbold.classList.remove('active');
+  });
+  btnUnbold.addEventListener('click', () => {
+    isBold = false;
     btnUnbold.classList.add('active');
-    pingStartBtn.classList.add('active');
-    sendSpeedLabel.textContent = sendSpeedRange.value;
-  }
+    btnBold.classList.remove('active');
+  });
 
-  // Render filters list
+  // === PING POSITION TOGGLE ===
+  pingStartBtn.addEventListener('click', () => {
+    pingAtStart = true;
+    pingStartBtn.classList.add('active');
+    pingEndBtn.classList.remove('active');
+  });
+  pingEndBtn.addEventListener('click', () => {
+    pingAtStart = false;
+    pingEndBtn.classList.add('active');
+    pingStartBtn.classList.remove('active');
+  });
+
+  // === PERSISTENT MESSAGE ===
+  persistentMsgInput.addEventListener('input', () => {
+    persistentMessage = persistentMsgInput.value.trim();
+  });
+  clearPersistentBtn.addEventListener('click', () => {
+    persistentMessage = "";
+    persistentMsgInput.value = "";
+  });
+
+  // === EMOJI BUTTONS ===
+  emojiAddBtn.addEventListener('click', () => {
+    let emoji = prompt("Enter an emoji to add:");
+    if (!emoji) return;
+
+    let react = confirm("React to your own messages with this emoji? Click 'Cancel' to append emoji at message end.");
+    if (react) {
+      emojiMode = "react";
+    } else {
+      emojiMode = "append";
+    }
+    emojiChar = emoji;
+
+    emojiAddBtn.style.display = "none";
+    emojiRemoveBtn.style.display = "block";
+  });
+  emojiRemoveBtn.addEventListener('click', () => {
+    emojiMode = null;
+    emojiChar = null;
+    emojiRemoveBtn.style.display = "none";
+    emojiAddBtn.style.display = "block";
+  });
+
+  // === FILTERS UI ===
   function renderFilters() {
-    filterListDiv.innerHTML = "";
-    filters.forEach((f,i) => {
+    filterListDiv.innerHTML = '';
+    filters.forEach((f, i) => {
       const div = document.createElement('div');
       div.className = 'filter-item';
       div.innerHTML = `
-        <div><b>${escapeHTML(f.keyword)}</b> → ${escapeHTML(f.reply)}</div>
-        <button data-idx="${i}">Remove</button>
+        <div><b>${sanitize(f.keyword)}</b> → ${sanitize(f.reply)}</div>
+        <button data-index="${i}">Remove</button>
       `;
       filterListDiv.appendChild(div);
     });
     [...filterListDiv.querySelectorAll('button')].forEach(btn => {
-      btn.onclick = e => {
-        let idx = +e.target.dataset.idx;
-        filters.splice(idx,1);
+      btn.addEventListener('click', e => {
+        const idx = parseInt(e.target.dataset.index);
+        filters.splice(idx, 1);
         renderFilters();
-      };
+      });
     });
   }
+  addFilterBtn.addEventListener('click', () => {
+    const kw = filterKeywordInput.value.trim();
+    const rp = filterReplyInput.value.trim();
+    if (!kw || !rp) {
+      alert('Both keyword and reply are required');
+      return;
+    }
+    filters.push({keyword: kw.toLowerCase(), reply: rp});
+    filterKeywordInput.value = "";
+    filterReplyInput.value = "";
+    renderFilters();
+  });
+  renderFilters();
 
-  // Escape HTML helper
-  function escapeHTML(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-  }
-
-  // Parse hierarchical wordlist - indented lines are treated as next phrase
-  function parseWordlist(text) {
-    let lines = text.split(/\r?\n/);
-    let result = [];
+  // === PARSE WORDLIST WITH HIERARCHY ===
+  // Supports indented lines for "under" words, flattening to send sequentially.
+  // Example:
+  // hello
+  //   world
+  // foo
+  //   bar
+  // means send "hello", then "world", then "foo", then "bar"
+  function parseHierarchicalWordlist(text) {
+    const lines = text.split(/\r?\n/);
+    const result = [];
     for(let i=0; i<lines.length; i++) {
       let line = lines[i].trimEnd();
       if(line.length === 0) continue;
-      // flatten hierarchy - each line is a phrase to send
-      result.push(line.trim());
+
+      if (!lines[i].startsWith(' ') && !lines[i].startsWith('\t')) {
+        // top level word
+        result.push(line.trim());
+      } else {
+        // indented line, treated as continuation
+        result.push(line.trim());
+      }
     }
     return result;
   }
 
-  // Shuffle utility
-  function shuffle(arr) {
-    for(let i=arr.length-1; i>0; i--) {
-      let j = Math.floor(Math.random()*(i+1));
+  // LOAD WORDLIST
+  function loadWordlist() {
+    parsedWordlist = parseHierarchicalWordlist(wordlistArea.value);
+    if(parsedWordlist.length === 0) {
+      alert('Please enter a wordlist with at least one line.');
+      return false;
+    }
+    flatWordlist = shuffleArray([...parsedWordlist]);
+    autoIndex = 0;
+    return true;
+  }
+
+  // SHUFFLE
+  function shuffleArray(arr) {
+    for(let i = arr.length -1; i>0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
   }
 
-  // Load wordlist into flatWordlist and shuffle
-  function loadWordlist() {
-    parsedWordlist = parseWordlist(wordlistArea.value);
-    if(parsedWordlist.length === 0) {
-      alert("Wordlist is empty. Please enter some phrases.");
-      return false;
+  // === FILE UPLOAD FOR WORDLIST ===
+  fileInput.addEventListener('change', e => {
+    if(!e.target.files.length) return;
+    const file = e.target.files[0];
+    if(!file.name.endsWith('.txt')) {
+      alert('Please upload a .txt file');
+      return;
     }
-    flatWordlist = shuffle([...parsedWordlist]);
-    autoIndex = 0;
-    return true;
-  }
+    const reader = new FileReader();
+    reader.onload = e => {
+      wordlistArea.value = e.target.result;
+    };
+    reader.readAsText(file);
+  });
 
-  // Send message function using round robin token/channel & multi user pings
+  // === SEND MESSAGE FUNCTION ===
   async function sendMessage(rawMsg) {
     if(sendingLocked) return false;
     sendingLocked = true;
 
-    updateInputsToState();
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    const userId = userInput.value.trim();
 
-    if(tokens.length === 0 || channels.length === 0 || userIds.length === 0) {
-      alert("Please enter at least one token, channel ID, and user ID.");
+    if(!token || !channelId || !userId) {
+      alert('Please enter your token, channel ID, and user ID.');
       sendingLocked = false;
       return false;
     }
 
-    let token = tokens[tokenIndex % tokens.length];
-    let channelId = channels[channelIndex % channels.length];
-    tokenIndex++;
-    channelIndex++;
-
-    // Compose ping string for multiple users:
-    // e.g. <@id1> <@id2>
-    let pingStr = userIds.map(id => `<@${id}>`).join(' ');
-
+    // Compose message:
+    // format: bold (#) if enabled, ping either start or end, plus persistent message appended
     let msg = rawMsg.trim();
+
+    // Add persistent message if any
     if(persistentMessage) {
-      msg += "\n" + persistentMessage;
+      msg += `\n${persistentMessage}`;
     }
 
+    // Compose ping with <@userId>
+    const ping = `<@${userId}>`;
+
     if(isBold) {
-      // # must always be FIRST before anything, including ping
-      // so message is: "# <@id1> <@id2> ... message"
-      msg = `# ${pingStr} ${msg}`;
+      // add # + space at start of entire message (before ping if pingAtStart)
+      if(pingAtStart) {
+        msg = `# ${ping} ${msg}`;
+      } else {
+        msg = `${ping} # ${msg}`;
+      }
     } else {
       if(pingAtStart) {
-        msg = `${pingStr} ${msg}`;
+        msg = `${ping} ${msg}`;
       } else {
-        msg = `${msg} ${pingStr}`;
+        msg = `${msg} ${ping}`;
       }
     }
 
-    // Append emoji if mode is append
+    // Add emoji if emojiMode append
     if(emojiMode === "append" && emojiChar) {
-      msg += " " + emojiChar;
+      msg = msg + ' ' + emojiChar;
     }
 
     const url = `https://discord.com/api/v9/channels/${channelId}/messages`;
-
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -845,48 +648,48 @@
         },
         body: JSON.stringify({content: msg})
       });
-
       if(!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if(res.status === 429) {
-          tokenRateLimited.add(token);
-          updateRateLimitUI();
-          setTimeout(() => tokenRateLimited.delete(token), 60000);
-        }
-        alert(`Failed to send message: ${res.status} ${res.statusText} ${data.message||''}`);
+        alert(`Failed to send message: ${res.status} ${res.statusText} ${data.message || ''}`);
         sendingLocked = false;
         return false;
       }
-
       const sentMsg = await res.json();
 
+      // React if emojiMode react
       if(emojiMode === "react" && emojiChar) {
-        await fetch(
-          `https://discord.com/api/v9/channels/${channelId}/messages/${sentMsg.id}/reactions/${encodeURIComponent(emojiChar)}/@me`,
-          { method: 'PUT', headers: { Authorization: token } }
-        );
+        // react to own message
+        await fetch(`https://discord.com/api/v9/channels/${channelId}/messages/${sentMsg.id}/reactions/${encodeURIComponent(emojiChar)}/@me`, {
+          method: 'PUT',
+          headers: { 'Authorization': token }
+        });
       }
 
+      lastSendTime = Date.now();
       sendingLocked = false;
       return true;
-    } catch(e) {
-      alert("Error sending message: " + e.message);
+    } catch (e) {
+      alert('Error sending message: ' + e.message);
       sendingLocked = false;
       return false;
     }
   }
 
-  // Clear input after sending message
-  async function sendCurrentMessage() {
-    let msg = messageInput.value;
-    if(!msg.trim()) return;
-    let ok = await sendMessage(msg);
-    if(ok) {
-      messageInput.value = "";
-    }
-  }
+  // === SEND BUTTON & ENTER KEY ===
+  sendBtn.addEventListener('click', () => {
+    if (sendingLocked) return;
+    sendMessage(messageInput.value);
+  });
 
-  // AUTO SENDING LOOP
+  messageInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (sendingLocked) return;
+      sendMessage(messageInput.value);
+    }
+  });
+
+  // === AUTO SENDING ===
   async function autoSendLoop() {
     if(!autoSending) return;
     if(parsedWordlist.length === 0) {
@@ -896,12 +699,15 @@
       }
     }
     if(autoIndex >= flatWordlist.length) {
-      flatWordlist = shuffle([...parsedWordlist]);
+      flatWordlist = shuffleArray([...parsedWordlist]);
       autoIndex = 0;
     }
+
     const phrase = flatWordlist[autoIndex];
     autoIndex++;
+
     await sendMessage(phrase);
+
     if(autoSending) {
       autoTimer = setTimeout(autoSendLoop, sendCooldown);
     }
@@ -910,30 +716,30 @@
   function startAutoSending() {
     if(!loadWordlist()) return;
     autoSending = true;
-    autoToggleBtn.textContent = "Stop Auto Sending";
+    autoToggleBtn.textContent = 'Stop Auto Sending';
     autoSendLoop();
   }
   function stopAutoSending() {
     autoSending = false;
-    autoToggleBtn.textContent = "Start Auto Sending";
+    autoToggleBtn.textContent = 'Start Auto Sending';
     if(autoTimer) {
       clearTimeout(autoTimer);
       autoTimer = null;
     }
   }
+  autoToggleBtn.addEventListener('click', () => {
+    if(autoSending) stopAutoSending();
+    else startAutoSending();
+  });
 
-  // POLLING CHANNEL MESSAGES + FILTERS
+  // === POLL CHANNEL MESSAGES & FILTERS ===
   let pollTimer = null;
-  const messagesDiv = document.getElementById('messages');
   let lastMessageTimestamp = 0;
 
   async function pollMessages() {
-    updateInputsToState();
-    if(tokens.length === 0 || channels.length === 0) return;
-
-    // Use first token and first channel for messages display and filter checking
-    const token = tokens[0];
-    const channelId = channels[0];
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    if(!token || !channelId) return;
 
     try {
       const res = await fetch(`https://discord.com/api/v9/channels/${channelId}/messages?limit=30`, {
@@ -942,369 +748,72 @@
       if(!res.ok) return;
       const data = await res.json();
 
-      // Clear message display container
-      messagesDiv.innerHTML = "";
-
-      // Display messages newest last
+      messagesDiv.innerHTML = '';
       data.reverse().forEach(msg => {
-        // Show messages on HUD, including user pfp and userid
+        // Add to UI
+        const div = document.createElement('div');
+        div.className = 'msg-entry';
+
         const avatar = msg.author.avatar
           ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png?size=64`
           : 'https://cdn.discordapp.com/embed/avatars/0.png';
 
-        let msgEntry = document.createElement('div');
-        msgEntry.className = 'msg-entry';
-        msgEntry.innerHTML = `
+        div.innerHTML = `
           <img src="${avatar}" alt="pfp" />
           <div class="msg-content">
-            <div class="msg-username">${escapeHTML(msg.author.username)}#${msg.author.discriminator} <span style="font-weight:600; color:#999; font-size:11px;">(${msg.author.id})</span></div>
-            <div class="msg-text">${escapeHTML(msg.content)}</div>
+            <div class="msg-username">${sanitize(msg.author.username)} (${msg.author.id})</div>
+            <div class="msg-text">${sanitize(msg.content)}</div>
           </div>
         `;
-        messagesDiv.appendChild(msgEntry);
+        messagesDiv.appendChild(div);
 
-        // Filter check:
-        let lc = msg.content.toLowerCase();
+        // FILTER check - case insensitive, exact substring match
         filters.forEach(f => {
-          if(lc.includes(f.keyword)) {
-            // Auto reply with first token, first channel
-            sendMessage(f.reply);
+          if(msg.content.toLowerCase().includes(f.keyword.toLowerCase())) {
+            // send reply (debounced)
+            // Only reply if message isn't from us (to avoid loops)
+            if(msg.author.id !== userId) {
+              setTimeout(() => sendMessage(f.reply), 100);
+            }
           }
         });
       });
-
-    } catch(e) {
-      // Ignore errors silently here
-    }
-  }
-  pollTimer = setInterval(pollMessages, 3500);
-
-  // RATE LIMIT UI & TOKEN STATUS + PING + LOCAL TIME + CHANNEL INFO
-  async function updateRateLimitUI() {
-    updateInputsToState();
-    tokensList.innerHTML = "";
-    let allRateLimited = false;
-
-    for(let token of tokens) {
-      let userInfo = await fetchUserInfo(token);
-      if(!userInfo) continue;
-
-      // Check if token is rate limited
-      let ratelimited = tokenRateLimited.has(token);
-      if(ratelimited) allRateLimited = true;
-
-      const li = document.createElement('div');
-      li.className = 'token-item';
-      li.innerHTML = `
-        <img src="${userInfo.avatarUrl}" class="token-pfp" alt="pfp" />
-        <div class="token-info">
-          <b>${escapeHTML(userInfo.username)}#${userInfo.discriminator}</b><br />
-          ID: ${userInfo.id}<br />
-          Rate Limited: ${ratelimited ? '<span style="color:#e55151;">YES</span>' : '<span style="color:#7ddb7d;">NO</span>'}
-        </div>
-      `;
-      tokensList.appendChild(li);
-    }
-    rateLimitStatus.textContent = allRateLimited ? "You are rate limited on one or more tokens!" : "Not rate limited";
-    rateLimitStatus.className = allRateLimited ? "status-bar ratelimited" : "status-bar ok";
-  }
-
-  // Fetch user info from token
-  const userInfoCache = {};
-  async function fetchUserInfo(token) {
-    if(userInfoCache[token]) return userInfoCache[token];
-    try {
-      let res = await fetch('https://discord.com/api/v9/users/@me', {
-        headers: { Authorization: token }
-      });
-      if(!res.ok) return null;
-      let data = await res.json();
-      let avatarUrl = data.avatar
-        ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png?size=64`
-        : 'https://cdn.discordapp.com/embed/avatars/0.png';
-
-      userInfoCache[token] = {
-        id: data.id,
-        username: data.username,
-        discriminator: data.discriminator,
-        avatarUrl
-      };
-      return userInfoCache[token];
-    } catch(e) {
-      return null;
-    }
-  }
-
-  // Ping / Channel info / Local time / Server name
-  async function updateStatusInfo() {
-    updateInputsToState();
-    if(tokens.length === 0 || channels.length === 0) {
-      channelServerStatus.textContent = "Channel: -- | Server: --";
-      pingStatus.textContent = "Ping: -- ms";
-      timeStatus.textContent = "Local Time: --:--";
-      return;
-    }
-    const token = tokens[0];
-    const channelId = channels[0];
-
-    // Fetch channel and guild info
-    try {
-      const chRes = await fetch(`https://discord.com/api/v9/channels/${channelId}`, {
-        headers: { Authorization: token }
-      });
-      if(!chRes.ok) throw new Error("Channel not found");
-      const chData = await chRes.json();
-
-      let serverName = chData.guild_id ? await getGuildName(chData.guild_id, token) : "DM/Group";
-
-      channelServerStatus.textContent = `Channel: ${chData.name} | Server: ${serverName}`;
-
-      // Ping measurement by measuring fetch time for channel messages
-      let pingStart = Date.now();
-      let pongRes = await fetch(`https://discord.com/api/v9/channels/${channelId}/messages?limit=1`, {
-        headers: { Authorization: token }
-      });
-      let pingEnd = Date.now();
-      let pingMs = pingEnd - pingStart;
-      pingStatus.textContent = `Ping: ${pingMs} ms`;
-
-      // Local time by IP Geolocation API
-      const time = await getLocalTime();
-      timeStatus.textContent = `Local Time: ${time}`;
-    } catch(e) {
-      channelServerStatus.textContent = "Channel: -- | Server: --";
-      pingStatus.textContent = "Ping: -- ms";
-      timeStatus.textContent = "Local Time: --:--";
-    }
-  }
-  async function getGuildName(guildId, token) {
-    try {
-      const res = await fetch(`https://discord.com/api/v9/guilds/${guildId}`, {
-        headers: { Authorization: token }
-      });
-      if(!res.ok) return "Unknown Server";
-      const data = await res.json();
-      return data.name || "Unknown Server";
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch {
-      return "Unknown Server";
-    }
-  }
-  async function getLocalTime() {
-    try {
-      let res = await fetch("https://worldtimeapi.org/api/ip");
-      if(!res.ok) throw new Error("Time API error");
-      let data = await res.json();
-      let dt = new Date(data.datetime);
-      let hrs = dt.getHours();
-      let mins = dt.getMinutes();
-      let ampm = hrs >= 12 ? "pm" : "am";
-      hrs = hrs % 12 || 12;
-      mins = mins < 10 ? "0"+mins : mins;
-      return `${hrs}:${mins}${ampm}`;
-    } catch {
-      return "--:--";
+      // silently fail
     }
   }
 
-  // Update everything periodically
-  setInterval(() => {
-    updateRateLimitUI();
-    updateStatusInfo();
-  }, 7000);
-  updateRateLimitUI();
-  updateStatusInfo();
-
-  // ========== BACKGROUND ANIMATION: stars + floating clouds ==========
-  const canvas = document.getElementById('starsCanvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-
-  function resizeCanvas() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  // Stars particles
-  class Star {
-    constructor() {
-      this.reset();
-    }
-    reset() {
-      this.x = Math.random()*W;
-      this.y = Math.random()*H;
-      this.size = 0.8 + Math.random()*1.4;
-      this.alpha = 0.2 + Math.random()*0.6;
-      this.alphaChange = 0.003 + Math.random()*0.008;
-      this.direction = Math.random() < 0.5 ? 1 : -1;
-    }
-    update() {
-      this.alpha += this.alphaChange*this.direction;
-      if(this.alpha <= 0.2 || this.alpha >= 0.8) this.direction *= -1;
-    }
-    draw() {
-      ctx.beginPath();
-      let glowColor = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim() || '#6f5af9';
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 12;
-      ctx.fillStyle = `rgba(255,255,255,${this.alpha.toFixed(2)})`;
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    }
+  function startPolling() {
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(pollMessages, 2000);
   }
 
-  // Clouds - simple floating translucent blobs
-  class Cloud {
-    constructor() {
-      this.reset();
-    }
-    reset() {
-      this.x = Math.random()*W;
-      this.y = Math.random()*H;
-      this.size = 100 + Math.random()*220;
-      this.speedX = 0.03 + Math.random()*0.08;
-      this.speedY = 0.01 + Math.random()*0.03;
-      this.alpha = 0.07 + Math.random()*0.11;
-    }
-    update() {
-      this.x += this.speedX;
-      this.y += this.speedY;
-      if(this.x > W + this.size) this.x = -this.size;
-      if(this.y > H + this.size) this.y = -this.size;
-    }
-    draw() {
-      let gradient = ctx.createRadialGradient(this.x, this.y, this.size*0.3, this.x, this.y, this.size);
-      gradient.addColorStop(0, `rgba(111,90,249,${this.alpha})`);
-      gradient.addColorStop(1, 'rgba(111,90,249,0)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.ellipse(this.x, this.y, this.size*1.3, this.size*0.7, 0, 0, 2*Math.PI);
-      ctx.fill();
-    }
+  tokenInput.addEventListener('input', startPolling);
+  channelInput.addEventListener('input', startPolling);
+  userInput.addEventListener('input', startPolling);
+
+  // UTILS
+  function sanitize(str) {
+    if(!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
   }
 
-  let stars = [];
-  let clouds = [];
-
-  function initBG() {
-    stars = [];
-    for(let i=0; i<140; i++) stars.push(new Star());
-    clouds = [];
-    for(let i=0; i<15; i++) clouds.push(new Cloud());
-  }
-  initBG();
-
-  function animateBG() {
-    ctx.clearRect(0, 0, W, H);
-    clouds.forEach(c => { c.update(); c.draw(); });
-    stars.forEach(s => { s.update(); s.draw(); });
-    requestAnimationFrame(animateBG);
-  }
-  animateBG();
-
-  // Update glow color on color change later
-  // (Will be updated by color wheel below)
-
-  // ========== COLOR WHEEL ==========
-  // Add color wheel control UI dynamically on top-right HUD for user theme adjustment
-
-  // Create color picker container
-  const colorPickerDiv = document.createElement('div');
-  colorPickerDiv.style.position = 'fixed';
-  colorPickerDiv.style.top = '15px';
-  colorPickerDiv.style.left = '15px';
-  colorPickerDiv.style.background = 'var(--input-bg)';
-  colorPickerDiv.style.padding = '18px 22px';
-  colorPickerDiv.style.borderRadius = '16px';
-  colorPickerDiv.style.boxShadow = '0 0 24px var(--glow-color)';
-  colorPickerDiv.style.zIndex = 9999;
-  colorPickerDiv.style.userSelect = 'none';
-  colorPickerDiv.style.width = '280px';
-
-  // Title
-  const colorPickerTitle = document.createElement('h2');
-  colorPickerTitle.textContent = 'Customize Theme Colors';
-  colorPickerTitle.style.color = 'var(--btn-bg)';
-  colorPickerTitle.style.marginBottom = '12px';
-  colorPickerDiv.appendChild(colorPickerTitle);
-
-  // Background color input
-  const bgColorLabel = document.createElement('label');
-  bgColorLabel.textContent = 'Background Color:';
-  bgColorLabel.style.display = 'block';
-  bgColorLabel.style.marginBottom = '6px';
-  colorPickerDiv.appendChild(bgColorLabel);
-
-  const bgColorInput = document.createElement('input');
-  bgColorInput.type = 'color';
-  bgColorInput.value = '#0e0e0e';
-  bgColorInput.style.width = '100%';
-  bgColorInput.style.height = '40px';
-  bgColorInput.style.border = 'none';
-  bgColorInput.style.borderRadius = '10px';
-  bgColorInput.style.cursor = 'pointer';
-  bgColorInput.title = 'Change Background Color';
-  colorPickerDiv.appendChild(bgColorInput);
-
-  // Glow color input
-  const glowColorLabel = document.createElement('label');
-  glowColorLabel.textContent = 'Glow Color:';
-  glowColorLabel.style.marginTop = '14px';
-  glowColorLabel.style.display = 'block';
-  glowColorLabel.style.marginBottom = '6px';
-  colorPickerDiv.appendChild(glowColorLabel);
-
-  const glowColorInput = document.createElement('input');
-  glowColorInput.type = 'color';
-  glowColorInput.value = '#6f5af9';
-  glowColorInput.style.width = '100%';
-  glowColorInput.style.height = '40px';
-  glowColorInput.style.border = 'none';
-  glowColorInput.style.borderRadius = '10px';
-  glowColorInput.style.cursor = 'pointer';
-  glowColorInput.title = 'Change Glow Color';
-  colorPickerDiv.appendChild(glowColorInput);
-
-  document.body.appendChild(colorPickerDiv);
-
-  bgColorInput.oninput = () => {
-    document.documentElement.style.setProperty('--bg-color', bgColorInput.value);
-  };
-  glowColorInput.oninput = () => {
-    document.documentElement.style.setProperty('--glow-color', glowColorInput.value);
-    document.documentElement.style.setProperty('--btn-bg', glowColorInput.value);
-    document.documentElement.style.setProperty('--btn-bg-hover', shadeColor(glowColorInput.value, -20));
-    document.documentElement.style.setProperty('--input-glow', glowColorInput.value);
-  };
-
-  // Helper: Shade color (darker/lighter)
-  function shadeColor(color, percent) {
-    // color: #rrggbb
-    let R = parseInt(color.substring(1,3),16);
-    let G = parseInt(color.substring(3,5),16);
-    let B = parseInt(color.substring(5,7),16);
-
-    R = parseInt(R * (100 + percent) / 100);
-    G = parseInt(G * (100 + percent) / 100);
-    B = parseInt(B * (100 + percent) / 100);
-
-    R = (R<255)?R:255;
-    G = (G<255)?G:255;
-    B = (B<255)?B:255;
-
-    let RR = R.toString(16).padStart(2,'0');
-    let GG = G.toString(16).padStart(2,'0');
-    let BB = B.toString(16).padStart(2,'0');
-
-    return "#"+RR+GG+BB;
+  // UTILS: shuffle
+  function shuffleArray(arr) {
+    for(let i = arr.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
   }
 
-  // Initialize UI
-  setupUI();
+  // START POLLING ON LOAD IF INPUTS FILLED
+  window.addEventListener('load', () => {
+    if(tokenInput.value && channelInput.value && userInput.value) startPolling();
+  });
 
-})();
 </script>
+
 </body>
 </html>
