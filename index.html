@@ -1,164 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Agony | Outtype</title>
-  <style>
-    /* disable text selection */
-    * {
-      user-select: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: black;
-      color: white;
-      position: relative;
-    }
-
-    .ambient-glow {
-      position: absolute;
-      top: -100px;
-      left: -100px;
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, rgba(255,255,255,0.1), transparent 70%);
-      filter: blur(80px);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .stars {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      overflow: visible;
-    }
-
-    .star {
-      position: absolute;
-      width: 2.5px;
-      height: 2.5px;
-      background: white;
-      border-radius: 50%;
-      filter:
-        drop-shadow(0 0 6px white)
-        drop-shadow(0 0 10px rgba(255,255,255,0.5));
-      animation: twinkle 4s infinite ease-in-out alternate;
-      will-change: transform, opacity;
-      pointer-events: none;
-    }
-
-    @keyframes twinkle {
-      0%, 100% { opacity: 0.9; }
-      50% { opacity: 0.3; }
-    }
-
-    /* shooting star style */
-    .shooting-star {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: white;
-      border-radius: 50%;
-      opacity: 0;
-      z-index: 2;
-      box-shadow: 0 0 6px 2px white;
-      animation: shoot 2s ease-out forwards;
-      will-change: transform, opacity;
-      pointer-events: none;
-    }
-
-    @keyframes shoot {
-      0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translate(var(--dx), var(--dy)) scale(0.2);
-      }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Discord Web Pinger</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+  }
+  body {
+    background-color: #0e0e0e;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+  }
+  .container {
+    max-width: 600px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  input, textarea {
+    background: #1a1a1a;
+    border: 1px solid #444;
+    color: white;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    width: 100%;
+  }
+  button {
+    padding: 10px;
+    background: #5865f2;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background 0.2s ease;
+  }
+  button:hover {
+    background: #4752c4;
+  }
+  .hud {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    width: 320px;
+    height: 420px;
+    overflow-y: auto;
+    font-size: 12px;
+  }
+  .hud h2 {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+  #messages > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    background: #222;
+    padding: 6px;
+    border-radius: 6px;
+  }
+  #messages img {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  #messages div > div {
+    max-width: 260px;
+    word-wrap: break-word;
+  }
+  #messages b {
+    font-weight: 700;
+  }
+</style>
 </head>
 <body>
+  <div class="container">
+    <h1>Discord Web Pinger</h1>
+    <input id="token" placeholder="Your Discord Token" autocomplete="off" spellcheck="false" />
+    <input id="channelId" placeholder="Channel ID" autocomplete="off" spellcheck="false" />
+    <input id="userId" placeholder="User ID to ping" autocomplete="off" spellcheck="false" />
+    <textarea id="message" placeholder="Message to send" rows="4" spellcheck="false"></textarea>
+    <button id="sendBtn">Send Message</button>
+  </div>
 
-  <div class="ambient-glow"></div>
-  <div class="stars" id="stars"></div>
+  <div class="hud" id="hud">
+    <h2>Channel Activity</h2>
+    <div id="messages"></div>
+  </div>
 
-  <script>
-    const starContainer = document.getElementById('stars');
-    const stars = [];
-    const maxStars = 200;
+<script>
+  const tokenInput = document.getElementById('token');
+  const channelInput = document.getElementById('channelId');
+  const userInput = document.getElementById('userId');
+  const messageInput = document.getElementById('message');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesDiv = document.getElementById('messages');
 
-    for(let i=0; i<maxStars; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
+  // Send message function
+  async function sendMessage() {
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    const userId = userInput.value.trim();
+    const message = messageInput.value;
 
-      const x = Math.random() * window.innerWidth;
-      const y = Math.random() * window.innerHeight;
-
-      const vx = (Math.random() - 0.5) * 0.07;
-      const vy = (Math.random() - 0.5) * 0.07;
-
-      star.style.animationDelay = `${Math.random() * 5}s`;
-
-      starContainer.appendChild(star);
-
-      stars.push({el: star, x, y, vx, vy});
+    if (!token || !channelId || !userId || !message) {
+      alert('Please fill in all fields!');
+      return;
     }
 
-    let lastFrameTime = 0;
-    const fpsInterval = 1000 / 50; // ~50 FPS
+    const content = `<@${userId}> ${message}`;
 
-    function animateStars(timestamp = 0) {
-      if (timestamp - lastFrameTime > fpsInterval) {
-        stars.forEach(star => {
-          star.x += star.vx;
-          star.y += star.vy;
+    try {
+      const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+      });
 
-          if(star.x < 0 || star.x > window.innerWidth) star.vx *= -1;
-          if(star.y < 0 || star.y > window.innerHeight) star.vy *= -1;
-
-          star.el.style.transform = `translate(${star.x}px, ${star.y}px)`;
-        });
-        lastFrameTime = timestamp;
+      if (res.ok) {
+        alert('Message sent!');
+        messageInput.value = '';
+      } else {
+        const errorText = await res.text();
+        alert(`Error sending message:\n${errorText}`);
       }
-      requestAnimationFrame(animateStars);
+    } catch (e) {
+      alert(`Network error:\n${e.message}`);
     }
+  }
 
-    animateStars();
+  sendBtn.addEventListener('click', sendMessage);
 
-    function shootStar() {
-      const star = document.createElement('div');
-      star.className = 'shooting-star';
+  // Poll messages every 2 seconds
+  let pollingInterval = null;
 
-      const startX = Math.random() * window.innerWidth;
-      const startY = Math.random() * window.innerHeight;
-      const dx = (Math.random() - 0.5) * 1000;
-      const dy = (Math.random() - 0.5) * 1000;
+  function startPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
 
-      star.style.top = `${startY}px`;
-      star.style.left = `${startX}px`;
-      star.style.setProperty('--dx', `${dx}px`);
-      star.style.setProperty('--dy', `${dy}px`);
+    pollingInterval = setInterval(async () => {
+      const token = tokenInput.value.trim();
+      const channelId = channelInput.value.trim();
+      if (!token || !channelId) return;
 
-      document.body.appendChild(star);
-      setTimeout(() => star.remove(), 2000);
+      try {
+        const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
+          headers: {
+            'Authorization': token
+          }
+        });
+        if (!res.ok) {
+          // maybe token invalid or ratelimited, skip update
+          return;
+        }
+        const msgs = await res.json();
+        messagesDiv.innerHTML = '';
+        msgs.reverse().forEach(msg => {
+          const avatar = msg.author.avatar
+            ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png?size=64`
+            : `https://cdn.discordapp.com/embed/avatars/${msg.author.discriminator % 5}.png`;
+          const msgDiv = document.createElement('div');
+          msgDiv.innerHTML = `
+            <img src="${avatar}" alt="pfp" />
+            <div>
+              <b>${msg.author.username} (${msg.author.id})</b><br/>
+              ${sanitize(msg.content)}
+            </div>
+          `;
+          messagesDiv.appendChild(msgDiv);
+        });
+      } catch {
+        // silently fail, no flood in console
+      }
+    }, 2000);
+  }
+
+  // Sanitize text to prevent HTML injection
+  function sanitize(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Restart polling whenever token or channel changes
+  tokenInput.addEventListener('input', startPolling);
+  channelInput.addEventListener('input', startPolling);
+
+  // start polling if fields are already filled on page load
+  window.onload = () => {
+    if (tokenInput.value && channelInput.value) {
+      startPolling();
     }
-
-    setInterval(shootStar, 700);
-  </script>
-
+  };
+</script>
 </body>
 </html>
-
