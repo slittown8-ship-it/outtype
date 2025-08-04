@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Chatpack | made by agony</title>
+  <title>Discord Web Pinger + Auto Wordlist</title>
   <style>
     * {
       margin: 0;
@@ -16,23 +16,42 @@
       color: white;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
-      justify-content: center;
+      gap: 20px;
       padding: 40px;
+      min-height: 100vh;
+    }
+    .container, .sidepanel {
+      background: #111;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex-shrink: 0;
     }
     .container {
       max-width: 600px;
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
     }
-    h1 {
+    .sidepanel {
+      width: 360px;
+      height: 580px;
+      overflow: hidden;
+    }
+    h1, h2 {
       font-weight: 700;
-      font-size: 28px;
-      margin-bottom: 15px;
       letter-spacing: 1.2px;
     }
-    input, textarea {
+    h1 {
+      font-size: 28px;
+    }
+    h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      user-select: none;
+    }
+    input[type=text], textarea {
       background: #1a1a1a;
       border: 1px solid #444;
       color: white;
@@ -41,16 +60,16 @@
       border-radius: 6px;
       width: 100%;
       transition: border-color 0.25s ease;
+      resize: vertical;
     }
-    input:focus, textarea:focus {
+    input[type=text]:focus, textarea:focus {
       outline: none;
       border-color: #5865f2;
       background: #222;
     }
     textarea {
-      resize: vertical;
-      min-height: 80px;
-      max-height: 160px;
+      min-height: 90px;
+      max-height: 180px;
     }
     button {
       padding: 12px 0;
@@ -63,9 +82,19 @@
       font-size: 16px;
       letter-spacing: 0.8px;
       transition: background 0.25s ease;
+      user-select: none;
     }
-    button:hover {
+    button:hover:not(.active) {
       background: #4752c4;
+    }
+    button.active {
+      background: #344ac7 !important;
+    }
+    label {
+      font-size: 14px;
+      user-select: none;
+      margin-bottom: 6px;
+      display: block;
     }
     .hud {
       position: fixed;
@@ -82,6 +111,8 @@
       font-size: 13px;
       color: #ddd;
       overflow: hidden;
+      user-select: none;
+      z-index: 9999;
     }
     .hud-header {
       font-weight: 700;
@@ -89,7 +120,6 @@
       margin-bottom: 12px;
       border-bottom: 1px solid #444;
       padding-bottom: 8px;
-      user-select: none;
     }
     #messages {
       overflow-y: auto;
@@ -138,6 +168,7 @@
       font-size: 13px;
       color: #ddd;
       white-space: pre-wrap;
+      user-select: text;
     }
     .controls {
       display: flex;
@@ -198,11 +229,41 @@
       border-color: #4752c4;
       color: white;
     }
+    .file-upload {
+      margin-top: 8px;
+      font-size: 14px;
+      user-select: none;
+    }
+    .file-upload input[type=file] {
+      margin-top: 5px;
+      cursor: pointer;
+    }
+    .auto-control {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .auto-control button {
+      width: 100%;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .wordlist-textarea {
+      height: 260px;
+      font-family: monospace;
+      font-size: 13px;
+      resize: vertical;
+      background: #1a1a1a;
+      border: 1px solid #444;
+      color: white;
+      padding: 12px 14px;
+      border-radius: 6px;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Discord Web Chatpack | made by agony</h1>
+    <h1>Discord Web Pinger</h1>
     <input id="token" placeholder="Your Discord Token" autocomplete="off" spellcheck="false" />
     <input id="channelId" placeholder="Channel ID" autocomplete="off" spellcheck="false" />
     <input id="userId" placeholder="User ID to ping" autocomplete="off" spellcheck="false" />
@@ -222,12 +283,26 @@
     <button id="sendBtn">Send Message</button>
   </div>
 
+  <div class="sidepanel">
+    <h2>Wordlist / Auto Sender</h2>
+    <label for="wordlistArea">Paste or type wordlist (one phrase per line):</label>
+    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="Example:\nword hello world\nword under the bridge\nsomething else\nword goodbye"></textarea>
+
+    <label class="file-upload" for="fileInput">Or upload a .txt file:</label>
+    <input type="file" id="fileInput" accept=".txt" />
+
+    <div class="auto-control">
+      <button id="autoToggleBtn">Start Auto Sending</button>
+    </div>
+  </div>
+
   <div class="hud" id="hud">
     <div class="hud-header">Channel Activity</div>
     <div id="messages"></div>
   </div>
 
   <script>
+    // Elements refs
     const tokenInput = document.getElementById('token');
     const channelInput = document.getElementById('channelId');
     const userInput = document.getElementById('userId');
@@ -238,12 +313,21 @@
     const speedValue = document.getElementById('speedValue');
     const btnBold = document.getElementById('btnBold');
     const btnUnbold = document.getElementById('btnUnbold');
+    const wordlistArea = document.getElementById('wordlistArea');
+    const fileInput = document.getElementById('fileInput');
+    const autoToggleBtn = document.getElementById('autoToggleBtn');
 
+    // State variables
     let sendCooldown = parseInt(speedRange.value, 10);
     let lastSendTime = 0;
     let isBold = true;
+    let autoSending = false;
+    let autoTimer = null;
+    let parsedWordlist = [];
+    let shuffledWordlist = [];
+    let autoIndex = 0;
 
-    // Update speed label on slider change
+    // Update speed label
     speedRange.addEventListener('input', () => {
       sendCooldown = parseInt(speedRange.value, 10);
       speedValue.textContent = sendCooldown;
@@ -262,27 +346,25 @@
     });
 
     // Send message function with cooldown & style
-    async function sendMessage() {
+    async function sendMessage(contentOverride = null) {
       const now = Date.now();
-      if (now - lastSendTime < sendCooldown) {
-        return; // still cooling down
-      }
+      if (now - lastSendTime < sendCooldown) return;
       lastSendTime = now;
 
       const token = tokenInput.value.trim();
       const channelId = channelInput.value.trim();
       const userId = userInput.value.trim();
-      let msg = messageInput.value.trim();
+      let msg = contentOverride !== null ? contentOverride : messageInput.value.trim();
 
       if (!token || !channelId || !userId || !msg) return;
 
       if (isBold && !msg.startsWith('#')) {
-        msg = '#' + msg;
+        msg = '# ' + msg;
       } else if (!isBold && msg.startsWith('#')) {
-        msg = msg.replace(/^#+/, '');
+        msg = msg.replace(/^#+\s*/, '');
       }
 
-      const content = ` ${msg} <@${userId}>`;
+      const content = `<@${userId}> ${msg}`;
 
       try {
         const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
@@ -295,7 +377,9 @@
         });
 
         if (res.ok) {
-          messageInput.value = '';
+          if (contentOverride === null) {
+            messageInput.value = '';
+          }
         } else {
           console.error('Send error:', await res.text());
         }
@@ -304,9 +388,9 @@
       }
     }
 
-    sendBtn.addEventListener('click', sendMessage);
+    sendBtn.addEventListener('click', () => sendMessage());
 
-    // Send on Enter keypress inside message textarea (Shift+Enter for new line)
+    // Send on Enter keypress inside message textarea (Shift+Enter for newline)
     messageInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -316,7 +400,6 @@
 
     // Poll messages every 2 seconds
     let pollingInterval = null;
-
     function startPolling() {
       if (pollingInterval) clearInterval(pollingInterval);
 
@@ -353,6 +436,11 @@
         }
       }, 2000);
     }
+    tokenInput.addEventListener('input', startPolling);
+    channelInput.addEventListener('input', startPolling);
+    window.addEventListener('load', () => {
+      if (tokenInput.value && channelInput.value) startPolling();
+    });
 
     // Sanitize text for safe HTML output
     function sanitize(str) {
@@ -365,17 +453,109 @@
         .replace(/\'/g, "&#039;");
     }
 
-    // Restart polling when token or channel changes
-    tokenInput.addEventListener('input', startPolling);
-    channelInput.addEventListener('input', startPolling);
+    // Parse wordlist from textarea, filter only lines starting with "word "
+    function parseWordlist(rawText) {
+      // split lines, trim each line
+      const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
-    // Start polling on page load if fields are filled
-    window.addEventListener('load', () => {
-      if (tokenInput.value && channelInput.value) {
-        startPolling();
+      // lines starting with "word " (case sensitive) ONLY, use substring after that
+      const filtered = lines.filter(l => l.startsWith('word ')).map(l => l.substring(5).trim());
+
+      return filtered;
+    }
+
+    // Shuffle array helper
+    function shuffleArray(array) {
+      for (let i = array.length -1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // Load wordlist from textarea to parsedWordlist and shuffle
+    function loadWordlist() {
+      parsedWordlist = parseWordlist(wordlistArea.value);
+      if (parsedWordlist.length === 0) {
+        alert('Wordlist must contain at least one line starting with "word "');
+        return false;
+      }
+      shuffledWordlist = shuffleArray([...parsedWordlist]);
+      autoIndex = 0;
+      return true;
+    }
+
+    // Handle file upload to populate textarea
+    fileInput.addEventListener('change', e => {
+      if (!e.target.files.length) return;
+      const file = e.target.files[0];
+      if (!file.name.endsWith('.txt')) {
+        alert('Please upload a .txt file');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        wordlistArea.value = event.target.result;
+      };
+      reader.readAsText(file);
+    });
+
+    // Auto sending logic
+    async function autoSendLoop() {
+      if (!autoSending) return;
+
+      if (parsedWordlist.length === 0) {
+        // Try loading if empty
+        const loaded = loadWordlist();
+        if (!loaded) {
+          stopAutoSending();
+          return;
+        }
+      }
+
+      if (autoIndex >= shuffledWordlist.length) {
+        shuffledWordlist = shuffleArray([...parsedWordlist]);
+        autoIndex = 0;
+      }
+
+      const phrase = shuffledWordlist[autoIndex];
+      autoIndex++;
+
+      await sendMessage(phrase);
+
+      // Schedule next send respecting sendCooldown
+      if (autoSending) {
+        setTimeout(autoSendLoop, sendCooldown);
+      }
+    }
+
+    // Start auto send
+    function startAutoSending() {
+      if (!loadWordlist()) return;
+      autoSending = true;
+      autoToggleBtn.textContent = 'Stop Auto Sending';
+      autoSendLoop();
+    }
+
+    // Stop auto send
+    function stopAutoSending() {
+      autoSending = false;
+      autoToggleBtn.textContent = 'Start Auto Sending';
+      if (autoTimer) {
+        clearTimeout(autoTimer);
+        autoTimer = null;
+      }
+    }
+
+    // Toggle button
+    autoToggleBtn.addEventListener('click', () => {
+      if (autoSending) {
+        stopAutoSending();
+      } else {
+        startAutoSending();
       }
     });
+
   </script>
 </body>
 </html>
-
