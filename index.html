@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Pinger + Auto Wordlist</title>
+  <title>Discord Web Pinger + Auto Wordlist + Filters + Emoji</title>
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      user-select: none;
+      margin: 0; padding: 0; box-sizing: border-box; user-select: none;
     }
     body {
       background-color: #0e0e0e;
@@ -17,10 +14,10 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
       gap: 20px;
-      padding: 40px;
+      padding: 30px;
       min-height: 100vh;
     }
-    .container, .sidepanel {
+    .container, .sidepanel, .sidepanel-small {
       background: #111;
       border-radius: 12px;
       padding: 20px;
@@ -31,26 +28,26 @@
       flex-shrink: 0;
     }
     .container {
-      max-width: 600px;
+      max-width: 620px;
       width: 100%;
     }
     .sidepanel {
-      width: 360px;
+      width: 400px;
       height: 580px;
-      overflow: hidden;
+      overflow-y: auto;
     }
-    h1, h2 {
+    .sidepanel-small {
+      width: 260px;
+      height: 580px;
+      overflow-y: auto;
+    }
+    h1, h2, h3 {
       font-weight: 700;
       letter-spacing: 1.2px;
     }
-    h1 {
-      font-size: 28px;
-    }
-    h2 {
-      font-size: 20px;
-      margin-bottom: 10px;
-      user-select: none;
-    }
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; margin-bottom: 10px; user-select: none; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
     input[type=text], textarea {
       background: #1a1a1a;
       border: 1px solid #444;
@@ -70,6 +67,7 @@
     textarea {
       min-height: 90px;
       max-height: 180px;
+      font-family: monospace;
     }
     button {
       padding: 12px 0;
@@ -104,7 +102,7 @@
       border-radius: 10px;
       padding: 15px;
       width: 340px;
-      height: 430px;
+      height: 580px;
       box-shadow: 0 0 20px rgba(88, 101, 242, 0.6);
       display: flex;
       flex-direction: column;
@@ -176,6 +174,7 @@
       gap: 12px;
       margin-bottom: 8px;
       user-select: none;
+      flex-wrap: wrap;
     }
     .slider-container {
       flex-grow: 1;
@@ -183,6 +182,7 @@
       flex-direction: column;
       font-size: 13px;
       color: #bbb;
+      min-width: 150px;
     }
     input[type=range] {
       -webkit-appearance: none;
@@ -211,6 +211,7 @@
     .toggle-buttons {
       display: flex;
       gap: 10px;
+      user-select: none;
     }
     .toggle-buttons button {
       background: #333;
@@ -223,6 +224,7 @@
       cursor: pointer;
       transition: background 0.3s, border-color 0.3s;
       user-select: none;
+      white-space: nowrap;
     }
     .toggle-buttons button.active {
       background: #5865f2;
@@ -238,17 +240,18 @@
       margin-top: 5px;
       cursor: pointer;
     }
-    .auto-control {
+    .auto-control, .emoji-control, .ping-position-control, .persistent-msg-control {
       margin-top: 10px;
       text-align: center;
+      user-select: none;
     }
-    .auto-control button {
+    .auto-control button, .emoji-control button, .ping-position-control button, .persistent-msg-control button {
       width: 100%;
       font-weight: 700;
       font-size: 16px;
     }
     .wordlist-textarea {
-      height: 260px;
+      height: 250px;
       font-family: monospace;
       font-size: 13px;
       resize: vertical;
@@ -259,6 +262,49 @@
       border-radius: 6px;
       overflow-y: auto;
     }
+    .filter-list {
+      max-height: 210px;
+      overflow-y: auto;
+      margin-top: 8px;
+      background: #222;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 14px;
+      user-select: text;
+    }
+    .filter-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      align-items: center;
+      gap: 10px;
+    }
+    .filter-item div {
+      flex-grow: 1;
+      overflow-wrap: break-word;
+    }
+    .filter-item button {
+      padding: 4px 10px;
+      font-size: 13px;
+      background: #722;
+      border-radius: 5px;
+      border: none;
+      cursor: pointer;
+      color: white;
+    }
+    .filter-item button:hover {
+      background: #a33;
+    }
+    input[type=text].filter-key, input[type=text].filter-reply {
+      width: 100%;
+      margin-bottom: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #1a1a1a;
+      color: white;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -267,7 +313,7 @@
     <input id="token" placeholder="Your Discord Token" autocomplete="off" spellcheck="false" />
     <input id="channelId" placeholder="Channel ID" autocomplete="off" spellcheck="false" />
     <input id="userId" placeholder="User ID to ping" autocomplete="off" spellcheck="false" />
-    
+
     <div class="controls">
       <div class="slider-container">
         <label for="speedRange">Send Speed: <span id="speedValue">1000</span> ms</label>
@@ -280,13 +326,33 @@
     </div>
 
     <textarea id="message" placeholder="Message to send" rows="5" spellcheck="false"></textarea>
+
+    <div class="persistent-msg-control">
+      <label for="persistentMsgInput" style="margin-bottom:6px;">Persistent message (appended to every send):</label>
+      <textarea id="persistentMsgInput" rows="3" placeholder="Type message to always append, or leave empty to disable." spellcheck="false" style="resize: vertical;"></textarea>
+      <button id="clearPersistentBtn" style="margin-top: 6px; background:#a33;">Remove Persistent Message</button>
+    </div>
+
     <button id="sendBtn">Send Message</button>
+
+    <div class="ping-position-control">
+      <label>Ping Position:</label>
+      <div class="toggle-buttons" style="justify-content: center;">
+        <button id="pingStart" class="active">Ping at Start</button>
+        <button id="pingEnd">Ping at End</button>
+      </div>
+    </div>
+
+    <div class="emoji-control">
+      <button id="emojiAddBtn">Add Emoji</button>
+      <button id="emojiRemoveBtn" style="display:none; background:#a33;">Remove Emoji</button>
+    </div>
   </div>
 
   <div class="sidepanel">
     <h2>Wordlist / Auto Sender</h2>
-    <label for="wordlistArea">Paste or type wordlist (one phrase per line):</label>
-    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="Example:\nword hello world\nword under the bridge\nsomething else\nword goodbye"></textarea>
+    <label for="wordlistArea">Paste or type wordlist (lines and indented lines will send sequentially):</label>
+    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="Example:\nhello\n  world\nfoo\n  bar"></textarea>
 
     <label class="file-upload" for="fileInput">Or upload a .txt file:</label>
     <input type="file" id="fileInput" accept=".txt" />
@@ -296,267 +362,458 @@
     </div>
   </div>
 
+  <div class="sidepanel-small" style="padding-top: 4px;">
+    <h2>Filters</h2>
+    <label for="filterKeyword">Keyword to detect:</label>
+    <input id="filterKeyword" type="text" placeholder="e.g. loser" autocomplete="off" spellcheck="false" class="filter-key" />
+    <label for="filterReply">Reply to send:</label>
+    <input id="filterReply" type="text" placeholder="e.g. I'm not a loser" autocomplete="off" spellcheck="false" class="filter-reply" />
+    <button id="addFilterBtn" style="margin-bottom: 10px;">Add Filter</button>
+
+    <div class="filter-list" id="filterList"></div>
+  </div>
+
   <div class="hud" id="hud">
     <div class="hud-header">Channel Activity</div>
     <div id="messages"></div>
   </div>
 
-  <script>
-    // Elements refs
-    const tokenInput = document.getElementById('token');
-    const channelInput = document.getElementById('channelId');
-    const userInput = document.getElementById('userId');
-    const messageInput = document.getElementById('message');
-    const sendBtn = document.getElementById('sendBtn');
-    const messagesDiv = document.getElementById('messages');
-    const speedRange = document.getElementById('speedRange');
-    const speedValue = document.getElementById('speedValue');
-    const btnBold = document.getElementById('btnBold');
-    const btnUnbold = document.getElementById('btnUnbold');
-    const wordlistArea = document.getElementById('wordlistArea');
-    const fileInput = document.getElementById('fileInput');
-    const autoToggleBtn = document.getElementById('autoToggleBtn');
+<script>
+  // ELEMENTS
+  const tokenInput = document.getElementById('token');
+  const channelInput = document.getElementById('channelId');
+  const userInput = document.getElementById('userId');
+  const messageInput = document.getElementById('message');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesDiv = document.getElementById('messages');
+  const speedRange = document.getElementById('speedRange');
+  const speedValue = document.getElementById('speedValue');
+  const btnBold = document.getElementById('btnBold');
+  const btnUnbold = document.getElementById('btnUnbold');
+  const wordlistArea = document.getElementById('wordlistArea');
+  const fileInput = document.getElementById('fileInput');
+  const autoToggleBtn = document.getElementById('autoToggleBtn');
+  const pingStartBtn = document.getElementById('pingStart');
+  const pingEndBtn = document.getElementById('pingEnd');
+  const emojiAddBtn = document.getElementById('emojiAddBtn');
+  const emojiRemoveBtn = document.getElementById('emojiRemoveBtn');
+  const persistentMsgInput = document.getElementById('persistentMsgInput');
+  const clearPersistentBtn = document.getElementById('clearPersistentBtn');
+  const filterKeywordInput = document.getElementById('filterKeyword');
+  const filterReplyInput = document.getElementById('filterReply');
+  const addFilterBtn = document.getElementById('addFilterBtn');
+  const filterListDiv = document.getElementById('filterList');
 
-    // State variables
-    let sendCooldown = parseInt(speedRange.value, 10);
-    let lastSendTime = 0;
-    let isBold = true;
-    let autoSending = false;
-    let autoTimer = null;
-    let parsedWordlist = [];
-    let shuffledWordlist = [];
-    let autoIndex = 0;
+  // STATE
+  let sendCooldown = parseInt(speedRange.value, 10);
+  let lastSendTime = 0;
+  let isBold = true;
+  let autoSending = false;
+  let autoTimer = null;
+  let parsedWordlist = [];
+  let flatWordlist = [];
+  let autoIndex = 0;
+  let pingAtStart = true;
+  let emojiMode = null; // null, "react" or "append"
+  let emojiChar = null;
+  let persistentMessage = "";
+  let sendingLocked = false; // to prevent spam send calls
 
-    // Update speed label
-    speedRange.addEventListener('input', () => {
-      sendCooldown = parseInt(speedRange.value, 10);
-      speedValue.textContent = sendCooldown;
+  // FILTERS
+  let filters = [];
+
+  // HELPERS
+  function sanitize(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/\'/g, "&#039;");
+  }
+
+  // === SPEED SLIDER ===
+  speedRange.addEventListener('input', () => {
+    sendCooldown = parseInt(speedRange.value, 10);
+    speedValue.textContent = sendCooldown;
+  });
+
+  // === BOLD TOGGLE ===
+  btnBold.addEventListener('click', () => {
+    isBold = true;
+    btnBold.classList.add('active');
+    btnUnbold.classList.remove('active');
+  });
+  btnUnbold.addEventListener('click', () => {
+    isBold = false;
+    btnUnbold.classList.add('active');
+    btnBold.classList.remove('active');
+  });
+
+  // === PING POSITION TOGGLE ===
+  pingStartBtn.addEventListener('click', () => {
+    pingAtStart = true;
+    pingStartBtn.classList.add('active');
+    pingEndBtn.classList.remove('active');
+  });
+  pingEndBtn.addEventListener('click', () => {
+    pingAtStart = false;
+    pingEndBtn.classList.add('active');
+    pingStartBtn.classList.remove('active');
+  });
+
+  // === PERSISTENT MESSAGE ===
+  persistentMsgInput.addEventListener('input', () => {
+    persistentMessage = persistentMsgInput.value.trim();
+  });
+  clearPersistentBtn.addEventListener('click', () => {
+    persistentMessage = "";
+    persistentMsgInput.value = "";
+  });
+
+  // === EMOJI BUTTONS ===
+  emojiAddBtn.addEventListener('click', () => {
+    let emoji = prompt("Enter an emoji to add:");
+    if (!emoji) return;
+
+    let react = confirm("React to your own messages with this emoji? Click 'Cancel' to append emoji at message end.");
+    if (react) {
+      emojiMode = "react";
+    } else {
+      emojiMode = "append";
+    }
+    emojiChar = emoji;
+
+    emojiAddBtn.style.display = "none";
+    emojiRemoveBtn.style.display = "block";
+  });
+  emojiRemoveBtn.addEventListener('click', () => {
+    emojiMode = null;
+    emojiChar = null;
+    emojiRemoveBtn.style.display = "none";
+    emojiAddBtn.style.display = "block";
+  });
+
+  // === FILTERS UI ===
+  function renderFilters() {
+    filterListDiv.innerHTML = '';
+    filters.forEach((f, i) => {
+      const div = document.createElement('div');
+      div.className = 'filter-item';
+      div.innerHTML = `
+        <div><b>${sanitize(f.keyword)}</b> → ${sanitize(f.reply)}</div>
+        <button data-index="${i}">Remove</button>
+      `;
+      filterListDiv.appendChild(div);
     });
-
-    // Toggle bold/unbold buttons
-    btnBold.addEventListener('click', () => {
-      isBold = true;
-      btnBold.classList.add('active');
-      btnUnbold.classList.remove('active');
+    [...filterListDiv.querySelectorAll('button')].forEach(btn => {
+      btn.addEventListener('click', e => {
+        const idx = parseInt(e.target.dataset.index);
+        filters.splice(idx, 1);
+        renderFilters();
+      });
     });
-    btnUnbold.addEventListener('click', () => {
-      isBold = false;
-      btnBold.classList.remove('active');
-      btnUnbold.classList.add('active');
-    });
+  }
+  addFilterBtn.addEventListener('click', () => {
+    const kw = filterKeywordInput.value.trim();
+    const rp = filterReplyInput.value.trim();
+    if (!kw || !rp) {
+      alert('Both keyword and reply are required');
+      return;
+    }
+    filters.push({keyword: kw.toLowerCase(), reply: rp});
+    filterKeywordInput.value = "";
+    filterReplyInput.value = "";
+    renderFilters();
+  });
+  renderFilters();
 
-    // Send message function with cooldown & style
-    async function sendMessage(contentOverride = null) {
-      const now = Date.now();
-      if (now - lastSendTime < sendCooldown) return;
-      lastSendTime = now;
+  // === PARSE WORDLIST WITH HIERARCHY ===
+  // Supports indented lines for "under" words, flattening to send sequentially.
+  // Example:
+  // hello
+  //   world
+  // foo
+  //   bar
+  // means send "hello", then "world", then "foo", then "bar"
+  function parseHierarchicalWordlist(text) {
+    const lines = text.split(/\r?\n/);
+    const result = [];
+    for(let i=0; i<lines.length; i++) {
+      let line = lines[i].trimEnd();
+      if(line.length === 0) continue;
 
-      const token = tokenInput.value.trim();
-      const channelId = channelInput.value.trim();
-      const userId = userInput.value.trim();
-      let msg = contentOverride !== null ? contentOverride : messageInput.value.trim();
-
-      if (!token || !channelId || !userId || !msg) return;
-
-      if (isBold && !msg.startsWith('#')) {
-        msg = '# ' + msg;
-      } else if (!isBold && msg.startsWith('#')) {
-        msg = msg.replace(/^#+\s*/, '');
+      if (!lines[i].startsWith(' ') && !lines[i].startsWith('\t')) {
+        // top level word
+        result.push(line.trim());
+      } else {
+        // indented line, treated as continuation
+        result.push(line.trim());
       }
+    }
+    return result;
+  }
 
-      const content = `${msg} <@${userId}>`;
+  // LOAD WORDLIST
+  function loadWordlist() {
+    parsedWordlist = parseHierarchicalWordlist(wordlistArea.value);
+    if(parsedWordlist.length === 0) {
+      alert('Please enter a wordlist with at least one line.');
+      return false;
+    }
+    flatWordlist = shuffleArray([...parsedWordlist]);
+    autoIndex = 0;
+    return true;
+  }
 
-      try {
-        const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-          method: 'POST',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ content })
-        });
+  // SHUFFLE
+  function shuffleArray(arr) {
+    for(let i = arr.length -1; i>0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
 
-        if (res.ok) {
-          if (contentOverride === null) {
-            messageInput.value = '';
-          }
-        } else {
-          console.error('Send error:', await res.text());
-        }
-      } catch (e) {
-        console.error('Network error:', e.message);
+  // === FILE UPLOAD FOR WORDLIST ===
+  fileInput.addEventListener('change', e => {
+    if(!e.target.files.length) return;
+    const file = e.target.files[0];
+    if(!file.name.endsWith('.txt')) {
+      alert('Please upload a .txt file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      wordlistArea.value = e.target.result;
+    };
+    reader.readAsText(file);
+  });
+
+  // === SEND MESSAGE FUNCTION ===
+  async function sendMessage(rawMsg) {
+    if(sendingLocked) return false;
+    sendingLocked = true;
+
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    const userId = userInput.value.trim();
+
+    if(!token || !channelId || !userId) {
+      alert('Please enter your token, channel ID, and user ID.');
+      sendingLocked = false;
+      return false;
+    }
+
+    // Compose message:
+    // format: bold (#) if enabled, ping either start or end, plus persistent message appended
+    let msg = rawMsg.trim();
+
+    // Add persistent message if any
+    if(persistentMessage) {
+      msg += `\n${persistentMessage}`;
+    }
+
+    // Compose ping with <@userId>
+    const ping = `<@${userId}>`;
+
+    if(isBold) {
+      // add # + space at start of entire message (before ping if pingAtStart)
+      if(pingAtStart) {
+        msg = `# ${ping} ${msg}`;
+      } else {
+        msg = `${ping} # ${msg}`;
+      }
+    } else {
+      if(pingAtStart) {
+        msg = `${ping} ${msg}`;
+      } else {
+        msg = `${msg} ${ping}`;
       }
     }
 
-    sendBtn.addEventListener('click', () => sendMessage());
-
-    // Send on Enter keypress inside message textarea (Shift+Enter for newline)
-    messageInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
-    // Poll messages every 2 seconds
-    let pollingInterval = null;
-    function startPolling() {
-      if (pollingInterval) clearInterval(pollingInterval);
-
-      pollingInterval = setInterval(async () => {
-        const token = tokenInput.value.trim();
-        const channelId = channelInput.value.trim();
-        if (!token || !channelId) return;
-
-        try {
-          const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=10`, {
-            headers: { 'Authorization': token }
-          });
-          if (!res.ok) return;
-          const msgs = await res.json();
-          messagesDiv.innerHTML = '';
-          msgs.reverse().forEach(msg => {
-            const avatar = msg.author.avatar
-              ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png?size=64`
-              : `https://cdn.discordapp.com/embed/avatars/${msg.author.discriminator % 5}.png`;
-            const div = document.createElement('div');
-            div.className = 'msg-entry';
-            div.innerHTML = `
-              <img src="${avatar}" alt="pfp" />
-              <div class="msg-content">
-                <div class="msg-username">${sanitize(msg.author.username)} (${msg.author.id})</div>
-                <div class="msg-text">${sanitize(msg.content)}</div>
-              </div>
-            `;
-            messagesDiv.appendChild(div);
-          });
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        } catch {
-          // fail silently
-        }
-      }, 2000);
-    }
-    tokenInput.addEventListener('input', startPolling);
-    channelInput.addEventListener('input', startPolling);
-    window.addEventListener('load', () => {
-      if (tokenInput.value && channelInput.value) startPolling();
-    });
-
-    // Sanitize text for safe HTML output
-    function sanitize(str) {
-      if (!str) return '';
-      return str
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/\'/g, "&#039;");
+    // Add emoji if emojiMode append
+    if(emojiMode === "append" && emojiChar) {
+      msg = msg + ' ' + emojiChar;
     }
 
-    // Parse wordlist from textarea, filter only lines starting with "word "
-    function parseWordlist(rawText) {
-      // split lines, trim each line
-      const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-
-      // lines starting with "word " (case sensitive) ONLY, use substring after that
-      const filtered = lines.filter(l => l.startsWith('word ')).map(l => l.substring(5).trim());
-
-      return filtered;
-    }
-
-    // Shuffle array helper
-    function shuffleArray(array) {
-      for (let i = array.length -1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    // Load wordlist from textarea to parsedWordlist and shuffle
-    function loadWordlist() {
-      parsedWordlist = parseWordlist(wordlistArea.value);
-      if (parsedWordlist.length === 0) {
-        alert('Wordlist must contain at least one line starting with "word "');
+    const url = `https://discord.com/api/v9/channels/${channelId}/messages`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({content: msg})
+      });
+      if(!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Failed to send message: ${res.status} ${res.statusText} ${data.message || ''}`);
+        sendingLocked = false;
         return false;
       }
-      shuffledWordlist = shuffleArray([...parsedWordlist]);
-      autoIndex = 0;
-      return true;
-    }
+      const sentMsg = await res.json();
 
-    // Handle file upload to populate textarea
-    fileInput.addEventListener('change', e => {
-      if (!e.target.files.length) return;
-      const file = e.target.files[0];
-      if (!file.name.endsWith('.txt')) {
-        alert('Please upload a .txt file');
+      // React if emojiMode react
+      if(emojiMode === "react" && emojiChar) {
+        // react to own message
+        await fetch(`https://discord.com/api/v9/channels/${channelId}/messages/${sentMsg.id}/reactions/${encodeURIComponent(emojiChar)}/@me`, {
+          method: 'PUT',
+          headers: { 'Authorization': token }
+        });
+      }
+
+      lastSendTime = Date.now();
+      sendingLocked = false;
+      return true;
+    } catch (e) {
+      alert('Error sending message: ' + e.message);
+      sendingLocked = false;
+      return false;
+    }
+  }
+
+  // === SEND BUTTON & ENTER KEY ===
+  sendBtn.addEventListener('click', () => {
+    if (sendingLocked) return;
+    sendMessage(messageInput.value);
+  });
+
+  messageInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (sendingLocked) return;
+      sendMessage(messageInput.value);
+    }
+  });
+
+  // === AUTO SENDING ===
+  async function autoSendLoop() {
+    if(!autoSending) return;
+    if(parsedWordlist.length === 0) {
+      if(!loadWordlist()) {
+        stopAutoSending();
         return;
       }
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        wordlistArea.value = event.target.result;
-      };
-      reader.readAsText(file);
-    });
-
-    // Auto sending logic
-    async function autoSendLoop() {
-      if (!autoSending) return;
-
-      if (parsedWordlist.length === 0) {
-        // Try loading if empty
-        const loaded = loadWordlist();
-        if (!loaded) {
-          stopAutoSending();
-          return;
-        }
-      }
-
-      if (autoIndex >= shuffledWordlist.length) {
-        shuffledWordlist = shuffleArray([...parsedWordlist]);
-        autoIndex = 0;
-      }
-
-      const phrase = shuffledWordlist[autoIndex];
-      autoIndex++;
-
-      await sendMessage(phrase);
-
-      // Schedule next send respecting sendCooldown
-      if (autoSending) {
-        setTimeout(autoSendLoop, sendCooldown);
-      }
+    }
+    if(autoIndex >= flatWordlist.length) {
+      flatWordlist = shuffleArray([...parsedWordlist]);
+      autoIndex = 0;
     }
 
-    // Start auto send
-    function startAutoSending() {
-      if (!loadWordlist()) return;
-      autoSending = true;
-      autoToggleBtn.textContent = 'Stop Auto Sending';
-      autoSendLoop();
+    const phrase = flatWordlist[autoIndex];
+    autoIndex++;
+
+    await sendMessage(phrase);
+
+    if(autoSending) {
+      autoTimer = setTimeout(autoSendLoop, sendCooldown);
     }
+  }
 
-    // Stop auto send
-    function stopAutoSending() {
-      autoSending = false;
-      autoToggleBtn.textContent = 'Start Auto Sending';
-      if (autoTimer) {
-        clearTimeout(autoTimer);
-        autoTimer = null;
-      }
+  function startAutoSending() {
+    if(!loadWordlist()) return;
+    autoSending = true;
+    autoToggleBtn.textContent = 'Stop Auto Sending';
+    autoSendLoop();
+  }
+  function stopAutoSending() {
+    autoSending = false;
+    autoToggleBtn.textContent = 'Start Auto Sending';
+    if(autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
     }
+  }
+  autoToggleBtn.addEventListener('click', () => {
+    if(autoSending) stopAutoSending();
+    else startAutoSending();
+  });
 
-    // Toggle button
-    autoToggleBtn.addEventListener('click', () => {
-      if (autoSending) {
-        stopAutoSending();
-      } else {
-        startAutoSending();
-      }
-    });
+  // === POLL CHANNEL MESSAGES & FILTERS ===
+  let pollTimer = null;
+  let lastMessageTimestamp = 0;
 
-  </script>
+  async function pollMessages() {
+    const token = tokenInput.value.trim();
+    const channelId = channelInput.value.trim();
+    if(!token || !channelId) return;
+
+    try {
+      const res = await fetch(`https://discord.com/api/v9/channels/${channelId}/messages?limit=30`, {
+        headers: { Authorization: token }
+      });
+      if(!res.ok) return;
+      const data = await res.json();
+
+      messagesDiv.innerHTML = '';
+      data.reverse().forEach(msg => {
+        // Add to UI
+        const div = document.createElement('div');
+        div.className = 'msg-entry';
+
+        const avatar = msg.author.avatar
+          ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png?size=64`
+          : 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+        div.innerHTML = `
+          <img src="${avatar}" alt="pfp" />
+          <div class="msg-content">
+            <div class="msg-username">${sanitize(msg.author.username)} (${msg.author.id})</div>
+            <div class="msg-text">${sanitize(msg.content)}</div>
+          </div>
+        `;
+        messagesDiv.appendChild(div);
+
+        // FILTER check - case insensitive, exact substring match
+        filters.forEach(f => {
+          if(msg.content.toLowerCase().includes(f.keyword.toLowerCase())) {
+            // send reply (debounced)
+            // Only reply if message isn't from us (to avoid loops)
+            if(msg.author.id !== userId) {
+              setTimeout(() => sendMessage(f.reply), 100);
+            }
+          }
+        });
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch {
+      // silently fail
+    }
+  }
+
+  function startPolling() {
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(pollMessages, 2000);
+  }
+
+  tokenInput.addEventListener('input', startPolling);
+  channelInput.addEventListener('input', startPolling);
+  userInput.addEventListener('input', startPolling);
+
+  // UTILS
+  function sanitize(str) {
+    if(!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  // UTILS: shuffle
+  function shuffleArray(arr) {
+    for(let i = arr.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // START POLLING ON LOAD IF INPUTS FILLED
+  window.addEventListener('load', () => {
+    if(tokenInput.value && channelInput.value && userInput.value) startPolling();
+  });
+
+</script>
+
 </body>
 </html>
-
