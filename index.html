@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Discord Web Pinger + Old Layout + Chat Status</title>
+  <title>Discord Web Pinger + Auto Wordlist + Filters + Emoji</title>
   <style>
-    /* reset and basics */
     * {
       margin: 0; padding: 0; box-sizing: border-box; user-select: none;
     }
@@ -13,123 +12,215 @@
       background-color: #0e0e0e;
       color: white;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      overflow: hidden;
       display: flex;
       gap: 20px;
-      padding: 25px;
+      padding: 30px;
+      min-height: 100vh;
       position: relative;
-      z-index: 0;
+      overflow-x: hidden;
     }
-    canvas#backgroundCanvas {
+    
+    /* Starry background */
+    .stars {
       position: fixed;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-      pointer-events: none;
-      user-select: none;
-      background: #0e0e0e;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
     }
-    /* Main container layout: 3 columns */
-    .panel {
-      background: #111;
+    .star {
+      position: absolute;
+      background-color: white;
+      border-radius: 50%;
+      animation: twinkle var(--duration) infinite ease-in-out;
+      opacity: 0;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; }
+      50% { opacity: var(--opacity); }
+    }
+    
+    .container, .sidepanel, .sidepanel-small {
+      background: rgba(17, 17, 17, 0.85);
       border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 0 18px rgba(88, 101, 242, 0.65);
+      box-shadow: 0 0 20px var(--glow-color, rgba(88, 101, 242, 0.6));
       display: flex;
       flex-direction: column;
       gap: 14px;
-      max-height: 670px;
-      overflow-y: auto;
       flex-shrink: 0;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: box-shadow 0.3s ease;
     }
-    /* widths for each panel */
-    .panel-left {
-      width: 480px;
-      flex-grow: 0;
+    .container {
+      max-width: 620px;
+      width: 100%;
     }
-    .panel-middle {
-      width: 360px;
-      flex-grow: 0;
+    .sidepanel {
+      width: 400px;
+      height: 580px;
+      overflow-y: auto;
     }
-    .panel-right {
-      width: 360px;
-      flex-grow: 0;
+    .sidepanel-small {
+      width: 260px;
+      height: 580px;
+      overflow-y: auto;
     }
-    /* headings */
     h1, h2, h3 {
       font-weight: 700;
       letter-spacing: 1.2px;
-      user-select: none;
     }
-    h1 {
-      font-size: 26px;
-      margin-bottom: 12px;
-    }
-    h2 {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-    /* inputs and textarea */
-    label {
-      font-size: 14px;
-      margin-bottom: 6px;
-      display: block;
-    }
+    h1 { font-size: 28px; }
+    h2 { font-size: 20px; margin-bottom: 10px; user-select: none; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
     input[type=text], textarea {
-      background: #1a1a1a;
-      border: 1px solid #444;
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(68, 68, 68, 0.5);
       color: white;
       padding: 12px 14px;
       font-size: 15px;
       border-radius: 6px;
       width: 100%;
+      transition: border-color 0.25s ease, background 0.25s ease;
       resize: vertical;
-      transition: border-color 0.3s ease;
     }
     input[type=text]:focus, textarea:focus {
       outline: none;
-      border-color: #5865f2;
-      background: #222;
+      border-color: var(--glow-color, #5865f2);
+      background: rgba(34, 34, 34, 0.8);
     }
-    textarea.wordlist-textarea {
-      min-height: 210px;
-      max-height: 310px;
+    textarea {
+      min-height: 90px;
+      max-height: 180px;
       font-family: monospace;
-      white-space: pre-wrap;
-      overflow-y: auto;
     }
-    /* buttons */
     button {
-      background: #5865f2;
+      padding: 12px 0;
+      background: var(--glow-color, #5865f2);
       border: none;
       color: white;
-      padding: 12px 0;
+      cursor: pointer;
+      border-radius: 6px;
       font-weight: 700;
       font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.25s ease;
+      letter-spacing: 0.8px;
+      transition: all 0.25s ease;
       user-select: none;
     }
     button:hover:not(.active) {
-      background: #4752c4;
+      background: var(--glow-hover, #4752c4);
+      transform: translateY(-1px);
     }
     button.active {
-      background: #344ac7 !important;
+      background: var(--glow-active, #344ac7) !important;
     }
-    /* controls container */
+    label {
+      font-size: 14px;
+      user-select: none;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .hud {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: rgba(24, 24, 24, 0.85);
+      border-radius: 10px;
+      padding: 15px;
+      width: 340px;
+      height: 580px;
+      box-shadow: 0 0 20px var(--glow-color, rgba(88, 101, 242, 0.6));
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      color: #ddd;
+      overflow: hidden;
+      user-select: none;
+      z-index: 9999;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .hud-header {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(68, 68, 68, 0.5);
+      padding-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #messages {
+      overflow-y: auto;
+      flex-grow: 1;
+      padding-right: 4px;
+    }
+    #messages::-webkit-scrollbar {
+      width: 7px;
+    }
+    #messages::-webkit-scrollbar-thumb {
+      background: var(--glow-color, #5865f2);
+      border-radius: 4px;
+    }
+    #messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .msg-entry {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      background: rgba(34, 34, 34, 0.6);
+      padding: 6px 10px;
+      border-radius: 8px;
+      word-wrap: break-word;
+      user-select: text;
+      transition: transform 0.2s ease;
+    }
+    .msg-entry:hover {
+      transform: translateX(3px);
+    }
+    .msg-entry img {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #444;
+    }
+    .msg-content {
+      max-width: 260px;
+    }
+    .msg-username {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--glow-color, #5865f2);
+      margin-bottom: 3px;
+      user-select: text;
+    }
+    .msg-text {
+      font-size: 13px;
+      color: #ddd;
+      white-space: pre-wrap;
+      user-select: text;
+    }
     .controls {
       display: flex;
-      gap: 12px;
       align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      user-select: none;
       flex-wrap: wrap;
     }
     .slider-container {
       flex-grow: 1;
+      display: flex;
+      flex-direction: column;
       font-size: 13px;
       color: #bbb;
+      min-width: 150px;
     }
     input[type=range] {
       -webkit-appearance: none;
@@ -137,20 +228,23 @@
       height: 6px;
       border-radius: 5px;
       background: #444;
+      outline: none;
+      margin-top: 5px;
       cursor: pointer;
     }
     input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none;
+      appearance: none;
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      background: #5865f2;
-      border: 2px solid #333;
+      background: var(--glow-color, #5865f2);
       cursor: pointer;
+      border: 2px solid #333;
       transition: background 0.25s ease;
     }
     input[type=range]:hover::-webkit-slider-thumb {
-      background: #4752c4;
+      background: var(--glow-hover, #4752c4);
     }
     .toggle-buttons {
       display: flex;
@@ -159,38 +253,60 @@
     }
     .toggle-buttons button {
       background: #333;
+      color: #ddd;
       font-weight: 600;
       font-size: 13px;
       padding: 6px 12px;
       border-radius: 6px;
       border: 2px solid transparent;
-      color: #ddd;
       cursor: pointer;
+      transition: all 0.3s;
+      user-select: none;
       white-space: nowrap;
     }
     .toggle-buttons button.active {
-      background: #5865f2;
-      border-color: #4752c4;
+      background: var(--glow-color, #5865f2);
+      border-color: var(--glow-hover, #4752c4);
       color: white;
     }
-    /* file upload */
     .file-upload {
+      margin-top: 8px;
       font-size: 14px;
-      margin-top: 10px;
       user-select: none;
     }
     .file-upload input[type=file] {
-      margin-top: 6px;
+      margin-top: 5px;
       cursor: pointer;
-      width: 100%;
     }
-    /* filter list */
-    .filter-list {
-      max-height: 190px;
-      overflow-y: auto;
-      background: #222;
-      padding: 10px;
+    .auto-control, .emoji-control, .ping-position-control, .persistent-msg-control {
+      margin-top: 10px;
+      text-align: center;
+      user-select: none;
+    }
+    .auto-control button, .emoji-control button, .ping-position-control button, .persistent-msg-control button {
+      width: 100%;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .wordlist-textarea {
+      height: 250px;
+      font-family: monospace;
+      font-size: 13px;
+      resize: vertical;
+      background: rgba(26, 26, 26, 0.8);
+      border: 1px solid rgba(68, 68, 68, 0.5);
+      color: white;
+      padding: 12px 14px;
       border-radius: 6px;
+      overflow-y: auto;
+    }
+    .filter-list {
+      max-height: 210px;
+      overflow-y: auto;
+      margin-top: 8px;
+      background: rgba(34, 34, 34, 0.6);
+      border-radius: 6px;
+      padding: 10px;
       font-size: 14px;
       user-select: text;
     }
@@ -213,612 +329,791 @@
       border: none;
       cursor: pointer;
       color: white;
-      user-select: none;
     }
     .filter-item button:hover {
       background: #a33;
     }
-    input.filter-key, input.filter-reply {
+    input[type=text].filter-key, input[type=text].filter-reply {
       width: 100%;
       margin-bottom: 6px;
       padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid #444;
-      background: #1a1a1a;
+      border: 1px solid rgba(68, 68, 68, 0.5);
+      background: rgba(26, 26, 26, 0.8);
       color: white;
       font-size: 14px;
     }
-    /* chat activity status container */
-    .chat-status {
-      background: #111;
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 0 18px rgba(88, 101, 242, 0.65);
+    
+    /* Modern input buttons */
+    .input-group {
       display: flex;
-      flex-direction: column;
-      max-height: 670px;
-      overflow: hidden;
-      color: #ddd;
-      font-size: 13px;
+      gap: 8px;
     }
-    .chat-status-header {
-      font-weight: 700;
-      font-size: 18px;
-      margin-bottom: 10px;
-      border-bottom: 1px solid #444;
-      padding-bottom: 8px;
-      user-select: none;
-    }
-    #messages {
+    .input-group input {
       flex-grow: 1;
-      overflow-y: auto;
-      margin-bottom: 12px;
-      padding-right: 6px;
     }
-    #messages::-webkit-scrollbar {
-      width: 8px;
-    }
-    #messages::-webkit-scrollbar-thumb {
-      background: #5865f2;
-      border-radius: 6px;
-    }
-    #messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .msg-entry {
+    .input-group button {
+      width: 40px;
+      padding: 0;
       display: flex;
-      gap: 10px;
       align-items: center;
-      margin-bottom: 6px;
-      background: #222;
-      padding: 6px 12px;
-      border-radius: 8px;
-      user-select: text;
-      word-wrap: break-word;
+      justify-content: center;
+      background: rgba(88, 101, 242, 0.2);
+      border: 1px solid rgba(88, 101, 242, 0.3);
     }
-    .msg-entry img {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      background: #444;
+    .input-group button:hover {
+      background: rgba(88, 101, 242, 0.4);
     }
-    .msg-content {
-      max-width: 240px;
-    }
-    .msg-username {
-      font-weight: 700;
-      font-size: 14px;
-      color: #5865f2;
-      margin-bottom: 3px;
-    }
-    .msg-text {
-      font-size: 13px;
-      white-space: pre-wrap;
-      color: #ddd;
-    }
-    /* status info */
-    .status-info {
-      font-size: 13px;
-      line-height: 1.4;
-      user-select: none;
-    }
-    .status-info div {
-      margin-bottom: 6px;
-    }
-    ul.status-list {
-      list-style: inside disc;
-      margin-top: 4px;
-      margin-bottom: 8px;
-      max-height: 65px;
+    
+    /* List displays for tokens/users/channels */
+    .item-list {
+      max-height: 100px;
       overflow-y: auto;
-      padding-left: 16px;
+      background: rgba(34, 34, 34, 0.6);
+      border-radius: 6px;
+      padding: 8px;
+      margin-top: 5px;
+      font-size: 13px;
     }
-    ul.status-list li {
-      margin-bottom: 2px;
-      word-break: break-word;
+    .list-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+      background: rgba(68, 68, 68, 0.3);
+    }
+    .list-item:hover {
+      background: rgba(88, 101, 242, 0.2);
+    }
+    .list-item button {
+      background: transparent;
+      border: none;
+      color: #ff6b6b;
+      padding: 0 4px;
+      font-size: 12px;
+    }
+    
+    /* Color picker */
+    .color-picker {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 5px;
+    }
+    .color-picker input {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+    .color-picker span {
+      font-size: 13px;
+    }
+    
+    /* Glow effect */
+    .glow {
+      animation: glow-pulse 3s infinite alternate;
+    }
+    @keyframes glow-pulse {
+      0% { box-shadow: 0 0 10px var(--glow-color, rgba(88, 101, 242, 0.6)); }
+      100% { box-shadow: 0 0 20px var(--glow-color, rgba(88, 101, 242, 0.9)); }
     }
   </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas"></canvas>
-
-  <!-- Left panel: tokens, channel IDs, user IDs, message input -->
-  <div class="panel panel-left">
-    <h1>discord web pinger</h1>
-
-    <label for="token">discord tokens (one per line)</label>
-    <textarea id="token" placeholder="paste your discord tokens here" rows="5" spellcheck="false"></textarea>
-
-    <label for="channelId">channel ids (one per line)</label>
-    <textarea id="channelId" placeholder="paste target channel ids here" rows="3" spellcheck="false"></textarea>
-
-    <label for="userId">user ids to ping (one per line)</label>
-    <textarea id="userId" placeholder="paste user ids here" rows="3" spellcheck="false"></textarea>
+  <!-- Starry background -->
+  <div class="stars" id="stars"></div>
+  
+  <div class="container">
+    <h1>Discord Web Pinger</h1>
+    
+    <!-- Multi-token input -->
+    <div>
+      <label>Tokens:</label>
+      <div class="input-group">
+        <input id="tokenInput" placeholder="Add Discord Token" autocomplete="off" spellcheck="false" />
+        <button id="addTokenBtn">+</button>
+      </div>
+      <div class="item-list" id="tokenList"></div>
+    </div>
+    
+    <!-- Multi-channel input -->
+    <div>
+      <label>Channel IDs:</label>
+      <div class="input-group">
+        <input id="channelInput" placeholder="Add Channel ID" autocomplete="off" spellcheck="false" />
+        <button id="addChannelBtn">+</button>
+      </div>
+      <div class="item-list" id="channelList"></div>
+    </div>
+    
+    <!-- Multi-user input -->
+    <div>
+      <label>User IDs to ping:</label>
+      <div class="input-group">
+        <input id="userInput" placeholder="Add User ID to ping" autocomplete="off" spellcheck="false" />
+        <button id="addUserBtn">+</button>
+      </div>
+      <div class="item-list" id="userList"></div>
+    </div>
 
     <div class="controls">
-      <div class="slider-container" style="min-width: 160px;">
-        <label for="speedRange">send speed: <span id="speedValue">1000</span> ms</label>
+      <div class="slider-container">
+        <label for="speedRange">Send Speed: <span id="speedValue">1000</span> ms</label>
         <input type="range" id="speedRange" min="200" max="5000" step="100" value="1000" />
       </div>
-      <div class="toggle-buttons" title="message style">
-        <button id="btnBold" class="active">bold (#)</button>
-        <button id="btnUnbold">unbold</button>
+      <div class="toggle-buttons" title="Message Style">
+        <button id="btnBold" class="active">Bold (#)</button>
+        <button id="btnUnbold">Unbold</button>
       </div>
     </div>
 
-    <textarea id="message" placeholder="message to send" rows="6" spellcheck="false"></textarea>
+    <textarea id="message" placeholder="Message to send" rows="5" spellcheck="false"></textarea>
 
-    <div class="controls" style="justify-content: space-between; margin-top: 10px;">
-      <button id="sendBtn" style="width: 48%;">send message</button>
-      <button id="autoToggleBtn" style="width: 48%;">start auto sending</button>
+    <div class="persistent-msg-control">
+      <label for="persistentMsgInput" style="margin-bottom:6px;">Persistent message (appended to every send):</label>
+      <textarea id="persistentMsgInput" rows="3" placeholder="Type message to always append, or leave empty to disable." spellcheck="false" style="resize: vertical;"></textarea>
+      <button id="clearPersistentBtn" style="margin-top: 6px; background:#a33;">Remove Persistent Message</button>
     </div>
 
-    <div style="margin-top: 15px;">
-      <label for="persistentMsgInput">persistent message (appended to every send):</label>
-      <textarea id="persistentMsgInput" rows="3" placeholder="leave empty to disable" spellcheck="false"></textarea>
-      <button id="clearPersistentBtn" style="margin-top: 6px; background: #a33; width: 100%;">remove persistent message</button>
-    </div>
+    <button id="sendBtn" class="glow">Send Message</button>
 
-    <div style="margin-top: 15px;">
-      <label>ping position:</label>
+    <div class="ping-position-control">
+      <label>Ping Position:</label>
       <div class="toggle-buttons" style="justify-content: center;">
-        <button id="pingStart" class="active">ping at start</button>
-        <button id="pingEnd">ping at end</button>
+        <button id="pingStart" class="active">Ping at Start</button>
+        <button id="pingEnd">Ping at End</button>
       </div>
     </div>
 
-    <div style="margin-top: 15px;">
-      <button id="emojiAddBtn" style="width: 48%;">add emoji</button>
-      <button id="emojiRemoveBtn" style="width: 48%; display:none; background:#a33;">remove emoji</button>
+    <div class="emoji-control">
+      <button id="emojiAddBtn">Add Emoji</button>
+      <button id="emojiRemoveBtn" style="display:none; background:#a33;">Remove Emoji</button>
     </div>
-
-    <div style="margin-top: 15px;">
-      <label for="colorWheel">choose website color</label>
-      <input type="color" id="colorWheel" value="#5865f2" />
-      <label for="glowColorWheel" style="margin-top: 8px;">choose glow color</label>
-      <input type="color" id="glowColorWheel" value="#5865f2" />
+    
+    <!-- UI Color Picker -->
+    <div>
+      <label>UI Glow Color:</label>
+      <div class="color-picker">
+        <input type="color" id="glowColorPicker" value="#5865f2" />
+        <span id="glowColorHex">#5865f2</span>
+        <button id="resetGlowColor" style="padding: 4px 8px; font-size: 12px;">Reset</button>
+      </div>
     </div>
   </div>
 
-  <!-- Middle panel: wordlist, file upload -->
-  <div class="panel panel-middle">
-    <h2>wordlist / auto sender</h2>
-    <label for="wordlistArea">paste or type wordlist (lines will send sequentially):</label>
-    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="example:\nhello\nworld\nfoo\nbar"></textarea>
+  <div class="sidepanel">
+    <h2>Wordlist / Auto Sender</h2>
+    <label for="wordlistArea">Paste or type wordlist (lines and indented lines will send sequentially):</label>
+    <textarea id="wordlistArea" class="wordlist-textarea" spellcheck="false" placeholder="Example:\nhello\n  world\nfoo\n  bar"></textarea>
 
-    <label class="file-upload" for="fileInput">or upload a .txt file:</label>
+    <label class="file-upload" for="fileInput">Or upload a .txt file:</label>
     <input type="file" id="fileInput" accept=".txt" />
+
+    <div class="auto-control">
+      <button id="autoToggleBtn">Start Auto Sending</button>
+    </div>
   </div>
 
-  <!-- Right panel: filters + chat activity/status HUD -->
-  <div class="panel panel-right">
-    <h2>filters</h2>
-    <label for="filterKeyword">keyword to detect:</label>
+  <div class="sidepanel-small" style="padding-top: 4px;">
+    <h2>Filters</h2>
+    <label for="filterKeyword">Keyword to detect:</label>
     <input id="filterKeyword" type="text" placeholder="e.g. loser" autocomplete="off" spellcheck="false" class="filter-key" />
-    <label for="filterReply">reply to send:</label>
-    <input id="filterReply" type="text" placeholder="e.g. i'm not a loser" autocomplete="off" spellcheck="false" class="filter-reply" />
-    <button id="addFilterBtn" style="margin-bottom: 12px;">add filter</button>
+    <label for="filterReply">Reply to send:</label>
+    <input id="filterReply" type="text" placeholder="e.g. I'm not a loser" autocomplete="off" spellcheck="false" class="filter-reply" />
+    <button id="addFilterBtn" style="margin-bottom: 10px;">Add Filter</button>
 
     <div class="filter-list" id="filterList"></div>
-
-    <div class="chat-status" style="margin-top: 18px; flex-grow: 1;">
-      <div class="chat-status-header">chat activity status</div>
-      <div id="messages"></div>
-      <div class="status-info">
-        <div><b>rate limited:</b> <span id="rateLimited">no</span></div>
-        <div><b>active tokens:</b>
-          <ul id="activeTokens" class="status-list"></ul>
-        </div>
-        <div><b>active channels:</b>
-          <ul id="activeChannels" class="status-list"></ul>
-        </div>
-        <div><b>active userids:</b>
-          <ul id="activeUserIds" class="status-list"></ul>
-        </div>
-        <div><b>ping (ms):</b> <span id="pingMs">-</span></div>
-        <div><b>current server:</b> <span id="currentServer">-</span></div>
-        <div><b>current channel:</b> <span id="currentChannel">-</span></div>
-        <div><b>current time:</b> <span id="currentTime">-</span></div>
-        <div><b>IP info:</b> <span id="ipInfo">loading...</span></div>
-      </div>
-    </div>
   </div>
 
-  <script>
-    // starfield background - same as before
-    const canvas = document.getElementById('backgroundCanvas');
-    const ctx = canvas.getContext('2d');
-    let stars = [];
-    let starCount = 120;
+  <div class="hud" id="hud">
+    <div class="hud-header">
+      Channel Activity
+      <button id="clearHudBtn" style="background: transparent; padding: 0; font-size: 12px;">Clear</button>
+    </div>
+    <div id="messages"></div>
+  </div>
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+<script>
+  // ====== STAR BACKGROUND ======
+  function createStars() {
+    const starsContainer = document.getElementById('stars');
+    const starCount = 200;
+    
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      
+      // Random properties for each star
+      const size = Math.random() * 2 + 1;
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const duration = Math.random() * 5 + 3;
+      const delay = Math.random() * 5;
+      const opacity = Math.random() * 0.7 + 0.3;
+      
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.left = `${x}%`;
+      star.style.top = `${y}%`;
+      star.style.setProperty('--duration', `${duration}s`);
+      star.style.setProperty('--opacity', opacity);
+      star.style.animationDelay = `${delay}s`;
+      
+      starsContainer.appendChild(star);
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+  }
+  
+  // Initialize stars
+  createStars();
 
-    class Star {
-      constructor() {
-        this.reset();
-      }
-      reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 1.2 + 0.3;
-        this.speed = (this.size * 0.2) + 0.1;
-        this.alpha = Math.random() * 0.8 + 0.2;
-        this.twinkleSpeed = Math.random() * 0.05 + 0.01;
-        this.twinkleDirection = 1;
-      }
-      update() {
-        this.x -= this.speed;
-        if (this.x < 0) this.x = canvas.width;
-        this.alpha += this.twinkleSpeed * this.twinkleDirection;
-        if (this.alpha > 1) {
-          this.alpha = 1;
-          this.twinkleDirection = -1;
-        } else if (this.alpha < 0.2) {
-          this.alpha = 0.2;
-          this.twinkleDirection = 1;
+  // ====== UI GLOW COLOR ======
+  function updateGlowColor(color) {
+    document.documentElement.style.setProperty('--glow-color', color);
+    
+    // Calculate hover and active colors
+    const hoverColor = adjustColor(color, -20);
+    const activeColor = adjustColor(color, -40);
+    
+    document.documentElement.style.setProperty('--glow-hover', hoverColor);
+    document.documentElement.style.setProperty('--glow-active', activeColor);
+    
+    // Update hex display
+    document.getElementById('glowColorHex').textContent = color;
+  }
+  
+  // Helper to adjust color brightness
+  function adjustColor(color, amount) {
+    return '#' + color.replace(/^#/, '').replace(/../g, color => 
+      ('0' + Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16).slice(-2)
+    );
+  }
+  
+  // Initialize color picker
+  const glowColorPicker = document.getElementById('glowColorPicker');
+  glowColorPicker.addEventListener('input', (e) => {
+    updateGlowColor(e.target.value);
+  });
+  
+  // Reset to default color
+  document.getElementById('resetGlowColor').addEventListener('click', () => {
+    glowColorPicker.value = '#5865f2';
+    updateGlowColor('#5865f2');
+  });
+
+  // ====== MULTI-ITEM MANAGEMENT ======
+  // Tokens, channels, and users will be stored in arrays
+  let tokens = [];
+  let channels = [];
+  let users = [];
+  
+  // Render item lists
+  function renderItemList(items, containerId, type) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    items.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'list-item';
+      div.innerHTML = `
+        <span>${item.substring(0, 15)}${item.length > 15 ? '...' : ''}</span>
+        <button data-index="${index}" data-type="${type}">×</button>
+      `;
+      container.appendChild(div);
+    });
+    
+    // Add click handlers to remove buttons
+    container.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const index = parseInt(e.target.dataset.index);
+        const type = e.target.dataset.type;
+        
+        switch(type) {
+          case 'token': tokens.splice(index, 1); break;
+          case 'channel': channels.splice(index, 1); break;
+          case 'user': users.splice(index, 1); break;
         }
-      }
-      draw() {
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${this.alpha})`;
-        ctx.shadowColor = "white";
-        ctx.shadowBlur = 5;
-        ctx.arc(this.x, this.y, this
-      this.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    }
-
-    function initStars() {
-      stars = [];
-      for(let i=0; i < starCount; i++) {
-        stars.push(new Star());
-      }
-    }
-    initStars();
-
-    function animateStars() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      stars.forEach(star => {
-        star.update();
-        star.draw();
-      });
-      requestAnimationFrame(animateStars);
-    }
-    animateStars();
-
-    // MAIN SCRIPT VARIABLES
-    const tokenArea = document.getElementById('token');
-    const channelArea = document.getElementById('channelId');
-    const userArea = document.getElementById('userId');
-    const messageArea = document.getElementById('message');
-    const sendBtn = document.getElementById('sendBtn');
-    const autoToggleBtn = document.getElementById('autoToggleBtn');
-    const speedRange = document.getElementById('speedRange');
-    const speedValue = document.getElementById('speedValue');
-    const boldBtn = document.getElementById('btnBold');
-    const unboldBtn = document.getElementById('btnUnbold');
-    const pingStartBtn = document.getElementById('pingStart');
-    const pingEndBtn = document.getElementById('pingEnd');
-    const emojiAddBtn = document.getElementById('emojiAddBtn');
-    const emojiRemoveBtn = document.getElementById('emojiRemoveBtn');
-    const colorWheel = document.getElementById('colorWheel');
-    const glowColorWheel = document.getElementById('glowColorWheel');
-    const persistentMsgInput = document.getElementById('persistentMsgInput');
-    const clearPersistentBtn = document.getElementById('clearPersistentBtn');
-
-    const wordlistArea = document.getElementById('wordlistArea');
-    const fileInput = document.getElementById('fileInput');
-
-    const filterKeyword = document.getElementById('filterKeyword');
-    const filterReply = document.getElementById('filterReply');
-    const addFilterBtn = document.getElementById('addFilterBtn');
-    const filterList = document.getElementById('filterList');
-
-    const messagesDiv = document.getElementById('messages');
-    const rateLimitedSpan = document.getElementById('rateLimited');
-    const activeTokensList = document.getElementById('activeTokens');
-    const activeChannelsList = document.getElementById('activeChannels');
-    const activeUserIdsList = document.getElementById('activeUserIds');
-    const pingMsSpan = document.getElementById('pingMs');
-    const currentServerSpan = document.getElementById('currentServer');
-    const currentChannelSpan = document.getElementById('currentChannel');
-    const currentTimeSpan = document.getElementById('currentTime');
-    const ipInfoSpan = document.getElementById('ipInfo');
-
-    // State vars
-    let autoSending = false;
-    let sendIntervalId = null;
-    let currentWordIndex = 0;
-    let wordlist = [];
-    let filters = [];
-    let isBold = true;
-    let pingPosition = 'start'; // or 'end'
-    let emojiAdded = false;
-    let rateLimited = false;
-
-    // Helpers
-    function logMessage(username, avatarUrl, text) {
-      const entry = document.createElement('div');
-      entry.classList.add('msg-entry');
-
-      const avatar = document.createElement('img');
-      avatar.src = avatarUrl || 'https://cdn.discordapp.com/embed/avatars/0.png'; // default discord avatar
-      avatar.alt = username;
-      entry.appendChild(avatar);
-
-      const content = document.createElement('div');
-      content.classList.add('msg-content');
-
-      const userElem = document.createElement('div');
-      userElem.classList.add('msg-username');
-      userElem.textContent = username;
-
-      const textElem = document.createElement('div');
-      textElem.classList.add('msg-text');
-      textElem.textContent = text;
-
-      content.appendChild(userElem);
-      content.appendChild(textElem);
-      entry.appendChild(content);
-
-      messagesDiv.appendChild(entry);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    // Toggles for bold/unbold
-    function setBold(active) {
-      isBold = active;
-      if(isBold){
-        boldBtn.classList.add('active');
-        unboldBtn.classList.remove('active');
-      } else {
-        boldBtn.classList.remove('active');
-        unboldBtn.classList.add('active');
-      }
-    }
-    boldBtn.addEventListener('click', () => setBold(true));
-    unboldBtn.addEventListener('click', () => setBold(false));
-
-    // Ping position toggle
-    function setPingPosition(pos) {
-      pingPosition = pos;
-      if(pos === 'start') {
-        pingStartBtn.classList.add('active');
-        pingEndBtn.classList.remove('active');
-      } else {
-        pingStartBtn.classList.remove('active');
-        pingEndBtn.classList.add('active');
-      }
-    }
-    pingStartBtn.addEventListener('click', () => setPingPosition('start'));
-    pingEndBtn.addEventListener('click', () => setPingPosition('end'));
-
-    // Emoji add/remove buttons
-    emojiAddBtn.addEventListener('click', () => {
-      emojiAdded = true;
-      emojiAddBtn.style.display = 'none';
-      emojiRemoveBtn.style.display = 'inline-block';
-    });
-    emojiRemoveBtn.addEventListener('click', () => {
-      emojiAdded = false;
-      emojiAddBtn.style.display = 'inline-block';
-      emojiRemoveBtn.style.display = 'none';
-    });
-
-    // Speed slider update
-    speedRange.addEventListener('input', () => {
-      speedValue.textContent = speedRange.value;
-    });
-
-    // Color wheel handlers
-    colorWheel.addEventListener('input', () => {
-      document.body.style.backgroundColor = colorWheel.value;
-    });
-    glowColorWheel.addEventListener('input', () => {
-      const glowColor = glowColorWheel.value;
-      document.querySelectorAll('.panel').forEach(panel => {
-        panel.style.boxShadow = `0 0 18px ${glowColor}`;
+        
+        renderItemList(items, containerId, type);
       });
     });
-
-    // Clear persistent message
-    clearPersistentBtn.addEventListener('click', () => {
-      persistentMsgInput.value = '';
-    });
-
-    // File upload for wordlist
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if(!file) return;
-      if(file.type !== 'text/plain'){
-        alert('Only .txt files are allowed');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        wordlistArea.value = evt.target.result;
-        updateWordlist();
-      };
-      reader.readAsText(file);
-      // reset file input so same file can be re-uploaded if needed
-      fileInput.value = '';
-    });
-
-    // Update wordlist array from textarea
-    function updateWordlist() {
-      wordlist = wordlistArea.value.split('\n').filter(line => line.trim().length > 0);
-      currentWordIndex = 0;
+  }
+  
+  // Add item functions
+  document.getElementById('addTokenBtn').addEventListener('click', () => {
+    const token = document.getElementById('tokenInput').value.trim();
+    if (token && !tokens.includes(token)) {
+      tokens.push(token);
+      renderItemList(tokens, 'tokenList', 'token');
+      document.getElementById('tokenInput').value = '';
     }
-    wordlistArea.addEventListener('input', updateWordlist);
+  });
+  
+  document.getElementById('addChannelBtn').addEventListener('click', () => {
+    const channel = document.getElementById('channelInput').value.trim();
+    if (channel && !channels.includes(channel)) {
+      channels.push(channel);
+      renderItemList(channels, 'channelList', 'channel');
+      document.getElementById('channelInput').value = '';
+    }
+  });
+  
+  document.getElementById('addUserBtn').addEventListener('click', () => {
+    const user = document.getElementById('userInput').value.trim();
+    if (user && !users.includes(user)) {
+      users.push(user);
+      renderItemList(users, 'userList', 'user');
+      document.getElementById('userInput').value = '';
+    }
+  });
+  
+  // Allow Enter key to add items
+  document.getElementById('tokenInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('addTokenBtn').click();
+  });
+  document.getElementById('channelInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('addChannelBtn').click();
+  });
+  document.getElementById('userInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') document.getElementById('addUserBtn').click();
+  });
 
-    // FILTERS MANAGEMENT
-    addFilterBtn.addEventListener('click', () => {
-      const key = filterKeyword.value.trim();
-      const reply = filterReply.value.trim();
-      if(!key || !reply){
-        alert('both keyword and reply are required');
-        return;
-      }
-      filters.push({key, reply});
-      renderFilters();
-      filterKeyword.value = '';
-      filterReply.value = '';
+  // ====== REST OF THE APPLICATION ======
+  // ELEMENTS
+  const messageInput = document.getElementById('message');
+  const sendBtn = document.getElementById('sendBtn');
+  const messagesDiv = document.getElementById('messages');
+  const speedRange = document.getElementById('speedRange');
+  const speedValue = document.getElementById('speedValue');
+  const btnBold = document.getElementById('btnBold');
+  const btnUnbold = document.getElementById('btnUnbold');
+  const wordlistArea = document.getElementById('wordlistArea');
+  const fileInput = document.getElementById('fileInput');
+  const autoToggleBtn = document.getElementById('autoToggleBtn');
+  const pingStartBtn = document.getElementById('pingStart');
+  const pingEndBtn = document.getElementById('pingEnd');
+  const emojiAddBtn = document.getElementById('emojiAddBtn');
+  const emojiRemoveBtn = document.getElementById('emojiRemoveBtn');
+  const persistentMsgInput = document.getElementById('persistentMsgInput');
+  const clearPersistentBtn = document.getElementById('clearPersistentBtn');
+  const filterKeywordInput = document.getElementById('filterKeyword');
+  const filterReplyInput = document.getElementById('filterReply');
+  const addFilterBtn = document.getElementById('addFilterBtn');
+  const filterListDiv = document.getElementById('filterList');
+  const clearHudBtn = document.getElementById('clearHudBtn');
+
+  // STATE
+  let sendCooldown = parseInt(speedRange.value, 10);
+  let lastSendTime = 0;
+  let isBold = true;
+  let autoSending = false;
+  let autoTimer = null;
+  let parsedWordlist = [];
+  let flatWordlist = [];
+  let autoIndex = 0;
+  let pingAtStart = true;
+  let emojiMode = null; // null, "react" or "append"
+  let emojiChar = null;
+  let persistentMessage = "";
+  let sendingLocked = false; // to prevent spam send calls
+
+  // FILTERS
+  let filters = [];
+
+  // HELPERS
+  function sanitize(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\"/g, "&quot;")
+      .replace(/\'/g, "&#039;");
+  }
+
+  // === SPEED SLIDER ===
+  speedRange.addEventListener('input', () => {
+    sendCooldown = parseInt(speedRange.value, 10);
+    speedValue.textContent = sendCooldown;
+  });
+
+  // === BOLD TOGGLE ===
+  btnBold.addEventListener('click', () => {
+    isBold = true;
+    btnBold.classList.add('active');
+    btnUnbold.classList.remove('active');
+  });
+  btnUnbold.addEventListener('click', () => {
+    isBold = false;
+    btnUnbold.classList.add('active');
+    btnBold.classList.remove('active');
+  });
+
+  // === PING POSITION TOGGLE ===
+  pingStartBtn.addEventListener('click', () => {
+    pingAtStart = true;
+    pingStartBtn.classList.add('active');
+    pingEndBtn.classList.remove('active');
+  });
+  pingEndBtn.addEventListener('click', () => {
+    pingAtStart = false;
+    pingEndBtn.classList.add('active');
+    pingStartBtn.classList.remove('active');
+  });
+
+  // === PERSISTENT MESSAGE ===
+  persistentMsgInput.addEventListener('input', () => {
+    persistentMessage = persistentMsgInput.value.trim();
+  });
+  clearPersistentBtn.addEventListener('click', () => {
+    persistentMessage = "";
+    persistentMsgInput.value = "";
+  });
+
+  // === EMOJI BUTTONS ===
+  emojiAddBtn.addEventListener('click', () => {
+    let emoji = prompt("Enter an emoji to add:");
+    if (!emoji) return;
+
+    let react = confirm("React to your own messages with this emoji? Click 'Cancel' to append emoji at message end.");
+    if (react) {
+      emojiMode = "react";
+    } else {
+      emojiMode = "append";
+    }
+    emojiChar = emoji;
+
+    emojiAddBtn.style.display = "none";
+    emojiRemoveBtn.style.display = "block";
+  });
+  emojiRemoveBtn.addEventListener('click', () => {
+    emojiMode = null;
+    emojiChar = null;
+    emojiRemoveBtn.style.display = "none";
+    emojiAddBtn.style.display = "block";
+  });
+
+  // === FILTERS UI ===
+  function renderFilters() {
+    filterListDiv.innerHTML = '';
+    filters.forEach((f, i) => {
+      const div = document.createElement('div');
+      div.className = 'filter-item';
+      div.innerHTML = `
+        <div><b>${sanitize(f.keyword)}</b> → ${sanitize(f.reply)}</div>
+        <button data-index="${i}">Remove</button>
+      `;
+      filterListDiv.appendChild(div);
     });
+    [...filterListDiv.querySelectorAll('button')].forEach(btn => {
+      btn.addEventListener('click', e => {
+        const idx = parseInt(e.target.dataset.index);
+        filters.splice(idx, 1);
+        renderFilters();
+      });
+    });
+  }
+  addFilterBtn.addEventListener('click', () => {
+    const kw = filterKeywordInput.value.trim();
+    const rp = filterReplyInput.value.trim();
+    if (!kw || !rp) {
+      alert('Both keyword and reply are required');
+      return;
+    }
+    filters.push({keyword: kw.toLowerCase(), reply: rp});
+    filterKeywordInput.value = "";
+    filterReplyInput.value = "";
+    renderFilters();
+  });
+  renderFilters();
 
-    function renderFilters() {
-      filterList.innerHTML = '';
-      filters.forEach((filter, idx) => {
-        const item = document.createElement('div');
-        item.classList.add('filter-item');
-        const keyDiv = document.createElement('div');
-        keyDiv.textContent = filter.key;
-        const replyDiv = document.createElement('div');
-        replyDiv.textContent = filter.reply;
-        const removeBtn = document.createElement('button');
-        removeBtn.textContent = 'remove';
-        removeBtn.addEventListener('click', () => {
-          filters.splice(idx, 1);
-          renderFilters();
+  // === PARSE WORDLIST WITH HIERARCHY ===
+  function parseHierarchicalWordlist(text) {
+    const lines = text.split(/\r?\n/);
+    const result = [];
+    for(let i=0; i<lines.length; i++) {
+      let line = lines[i].trimEnd();
+      if(line.length === 0) continue;
+
+      if (!lines[i].startsWith(' ') && !lines[i].startsWith('\t')) {
+        // top level word
+        result.push(line.trim());
+      } else {
+        // indented line, treated as continuation
+        result.push(line.trim());
+      }
+    }
+    return result;
+  }
+
+  // LOAD WORDLIST
+  function loadWordlist() {
+    parsedWordlist = parseHierarchicalWordlist(wordlistArea.value);
+    if(parsedWordlist.length === 0) {
+      alert('Please enter a wordlist with at least one line.');
+      return false;
+    }
+    flatWordlist = shuffleArray([...parsedWordlist]);
+    autoIndex = 0;
+    return true;
+  }
+
+  // SHUFFLE
+  function shuffleArray(arr) {
+    for(let i = arr.length -1; i>0; i--) {
+      const j = Math.floor(Math.random() * (i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // === FILE UPLOAD FOR WORDLIST ===
+  fileInput.addEventListener('change', e => {
+    if(!e.target.files.length) return;
+    const file = e.target.files[0];
+    if(!file.name.endsWith('.txt')) {
+      alert('Please upload a .txt file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      wordlistArea.value = e.target.result;
+    };
+    reader.readAsText(file);
+  });
+
+  // === SEND MESSAGE FUNCTION ===
+  async function sendMessage(rawMsg) {
+    if(sendingLocked) return false;
+    sendingLocked = true;
+
+    if(tokens.length === 0 || channels.length === 0 || users.length === 0) {
+      alert('Please add at least one token, channel ID, and user ID.');
+      sendingLocked = false;
+      return false;
+    }
+
+    // Randomly select a token, channel, and user
+    const token = tokens[Math.floor(Math.random() * tokens.length)];
+    const channelId = channels[Math.floor(Math.random() * channels.length)];
+    const userId = users[Math.floor(Math.random() * users.length)];
+
+    // Compose message:
+    // format: bold (#) if enabled, ping either start or end, plus persistent message appended
+    let msg = rawMsg.trim();
+
+    // Add persistent message if any
+    if(persistentMessage) {
+      msg += `\n${persistentMessage}`;
+    }
+
+    // Compose ping with <@userId>
+    const ping = `<@${userId}>`;
+
+    if(isBold) {
+      // add # + space at start of entire message (before ping if pingAtStart)
+      if(pingAtStart) {
+        msg = `# ${ping} ${msg}`;
+      } else {
+        msg = `${ping} # ${msg}`;
+      }
+    } else {
+      if(pingAtStart) {
+        msg = `${ping} ${msg}`;
+      } else {
+        msg = `${msg} ${ping}`;
+      }
+    }
+
+    // Add emoji if emojiMode append
+    if(emojiMode === "append" && emojiChar) {
+      msg = msg + ' ' + emojiChar;
+    }
+
+    const url = `https://discord.com/api/v9/channels/${channelId}/messages`;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({content: msg})
+      });
+      if(!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(`Failed to send message: ${res.status} ${res.statusText} ${data.message || ''}`);
+        sendingLocked = false;
+        return false;
+      }
+      const sentMsg = await res.json();
+
+      // React if emojiMode react
+      if(emojiMode === "react" && emojiChar) {
+        // react to own message
+        await fetch(`https://discord.com/api/v9/channels/${channelId}/messages/${sentMsg.id}/reactions/${encodeURIComponent(emojiChar)}/@me`, {
+          method: 'PUT',
+          headers: { 'Authorization': token }
         });
-        item.appendChild(keyDiv);
-        item.appendChild(replyDiv);
-        item.appendChild(removeBtn);
-        filterList.appendChild(item);
-      });
+      }
+
+      lastSendTime = Date.now();
+      sendingLocked = false;
+      return true;
+    } catch (e) {
+      alert('Error sending message: ' + e.message);
+      sendingLocked = false;
+      return false;
     }
+  }
 
-    // Send a single message logic (simulate sending)
-    function sendMessage(text) {
-      if(!text.trim()) return;
+  // === SEND BUTTON & ENTER KEY ===
+  sendBtn.addEventListener('click', () => {
+    if (sendingLocked) return;
+    sendMessage(messageInput.value);
+  });
 
-      // Compose final message with ping and persistent message
-      const tokens = tokenArea.value.split('\n').filter(t => t.trim() !== '');
-      const userIds = userArea.value.split('\n').filter(u => u.trim() !== '');
-      if(tokens.length === 0) {
-        alert('Please enter at least one token');
+  messageInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (sendingLocked) return;
+      sendMessage(messageInput.value);
+    }
+  });
+
+  // === AUTO SENDING ===
+  async function autoSendLoop() {
+    if(!autoSending) return;
+    if(parsedWordlist.length === 0) {
+      if(!loadWordlist()) {
+        stopAutoSending();
         return;
       }
-      if(userIds.length === 0) {
-        alert('Please enter at least one user ID to ping');
-        return;
-      }
-
-      // Compose pings with correct position and formatting
-      let pingPart = userIds.map(id => `<@${id}>`).join(' ');
-      if(isBold) pingPart = `**${pingPart}**`;
-
-      let finalMsg = text;
-      if(pingPosition === 'start') {
-        finalMsg = emojiAdded ? `🔹 ${pingPart} ${text}` : `${pingPart} ${text}`;
-      } else {
-        finalMsg = emojiAdded ? `${text} 🔹 ${pingPart}` : `${text} ${pingPart}`;
-      }
-      if(persistentMsgInput.value.trim()) {
-        finalMsg += '\n' + persistentMsgInput.value.trim();
-      }
-
-      // Log the message for now (simulate send)
-      logMessage('You', null, finalMsg);
-
-      // In real usage, here you'd send the message through API calls with tokens etc.
-
-      return finalMsg;
+    }
+    if(autoIndex >= flatWordlist.length) {
+      flatWordlist = shuffleArray([...parsedWordlist]);
+      autoIndex = 0;
     }
 
-    // Send button handler
-    sendBtn.addEventListener('click', () => {
-      const msgText = messageArea.value.trim();
-      if(!msgText) return;
-      sendMessage(msgText);
-      messageArea.value = '';
-    });
+    const phrase = flatWordlist[autoIndex];
+    autoIndex++;
 
-    // Enter key sends message + clears textarea
-    messageArea.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendBtn.click();
-      }
-    });
+    await sendMessage(phrase);
 
-    // AUTO SENDING logic
-    autoToggleBtn.addEventListener('click', () => {
-      if(autoSending) {
-        stopAutoSend();
-      } else {
-        startAutoSend();
-      }
-    });
-
-    function startAutoSend() {
-      updateWordlist();
-      if(wordlist.length === 0) {
-        alert('Wordlist is empty');
-        return;
-      }
-      autoSending = true;
-      autoToggleBtn.textContent = 'stop auto sending';
-      sendIntervalId = setInterval(() => {
-        if(currentWordIndex >= wordlist.length) {
-          currentWordIndex = 0; // loop wordlist
-        }
-        sendMessage(wordlist[currentWordIndex]);
-        currentWordIndex++;
-      }, parseInt(speedRange.value));
+    if(autoSending) {
+      autoTimer = setTimeout(autoSendLoop, sendCooldown);
     }
-    function stopAutoSend() {
-      autoSending = false;
-      autoToggleBtn.textContent = 'start auto sending';
-      if(sendIntervalId) clearInterval(sendIntervalId);
+  }
+
+  function startAutoSending() {
+    if(!loadWordlist()) return;
+    autoSending = true;
+    autoToggleBtn.textContent = 'Stop Auto Sending';
+    autoSendLoop();
+  }
+  function stopAutoSending() {
+    autoSending = false;
+    autoToggleBtn.textContent = 'Start Auto Sending';
+    if(autoTimer) {
+      clearTimeout(autoTimer);
+      autoTimer = null;
     }
+  }
+  autoToggleBtn.addEventListener('click', () => {
+    if(autoSending) stopAutoSending();
+    else startAutoSending();
+  });
 
-    // Update UI with dummy data for chat status info (you can replace this with real data)
-    function updateStatusInfo() {
-      rateLimitedSpan.textContent = rateLimited ? 'yes' : 'no';
-      // just demo tokens/channels/userids lists from current inputs
-      activeTokensList.innerHTML = '';
-      tokenArea.value.split('\n').filter(t => t.trim() !== '').forEach(t => {
-        const li = document.createElement('li');
-        li.textContent = t.substring(0, 20) + (t.length > 20 ? '...' : '');
-        activeTokensList.appendChild(li);
+  // === POLL CHANNEL MESSAGES & FILTERS ===
+  let pollTimer = null;
+  let lastMessageTimestamp = 0;
+
+  async function pollMessages() {
+    if(tokens.length === 0 || channels.length === 0) return;
+    
+    // Use random token and channel
+    const token = tokens[Math.floor(Math.random() * tokens.length)];
+    const channelId = channels[Math.floor(Math.random() * channels.length)];
+    
+    try {
+      const res = await fetch(`https://discord.com/api/v9/channels/${channelId}/messages?limit=30`, {
+        headers: { Authorization: token }
       });
-      activeChannelsList.innerHTML = '';
-      channelArea.value.split('\n').filter(c => c.trim() !== '').forEach(c => {
-        const li = document.createElement('li');
-        li.textContent = c;
-        activeChannelsList.appendChild(li);
+      if(!res.ok) return;
+      const data = await res.json();
+
+      messagesDiv.innerHTML = '';
+      data.reverse().forEach(msg => {
+        // Add to UI
+        const div = document.createElement('div');
+        div.className = 'msg-entry';
+
+        const avatar = msg.author.avatar
+          ? `https://cdn.discordapp.com/avatars/${msg.author.id}/${msg.author.avatar}.png?size=64`
+          : 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+        div.innerHTML = `
+          <img src="${avatar}" alt="pfp" />
+          <div class="msg-content">
+            <div class="msg-username">${sanitize(msg.author.username)} (${msg.author.id})</div>
+            <div class="msg-text">${sanitize(msg.content)}</div>
+          </div>
+        `;
+        messagesDiv.appendChild(div);
+
+        // FILTER check - case insensitive, exact substring match
+        filters.forEach(f => {
+          if(msg.content.toLowerCase().includes(f.keyword.toLowerCase())) {
+            // send reply (debounced)
+            // Only reply if message isn't from us (to avoid loops)
+            if(!users.includes(msg.author.id)) {
+              setTimeout(() => sendMessage(f.reply), 100);
+            }
+          }
+        });
       });
-      activeUserIdsList.innerHTML = '';
-      userArea.value.split('\n').filter(u => u.trim() !== '').forEach(u => {
-        const li = document.createElement('li');
-        li.textContent = u;
-        activeUserIdsList.appendChild(li);
-      });
-      pingMsSpan.textContent = '-'; // placeholder
-      currentServerSpan.textContent = '-';
-      currentChannelSpan.textContent = '-';
-      currentTimeSpan.textContent = new Date().toLocaleTimeString();
-      ipInfoSpan.textContent = 'loading...';
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    } catch {
+      // silently fail
     }
+  }
 
-    setInterval(updateStatusInfo, 1000);
+  function startPolling() {
+    if(pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(pollMessages, 2000);
+  }
 
-    // Fetch IP info once
-    fetch('https://api.ipify.org?format=json')
-      .then(res => res.json())
-      .then(data => {
-        ipInfoSpan.textContent = data.ip;
-      }).catch(() => {
-        ipInfoSpan.textContent = 'error fetching IP';
-      });
+  // Clear HUD messages
+  clearHudBtn.addEventListener('click', () => {
+    messagesDiv.innerHTML = '';
+  });
 
-  </script>
+  // Start polling when items are added
+  document.getElementById('addTokenBtn').addEventListener('click', startPolling);
+  document.getElementById('addChannelBtn').addEventListener('click', startPolling);
+  document.getElementById('addUserBtn').addEventListener('click', startPolling);
+
+  // UTILS
+  function sanitize(str) {
+    if(!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  // UTILS: shuffle
+  function shuffleArray(arr) {
+    for(let i = arr.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // Initialize glow color
+  updateGlowColor('#5865f2');
+</script>
+
 </body>
 </html>
